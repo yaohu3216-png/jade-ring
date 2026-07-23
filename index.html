@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#24151f" />
+  <title>玉环·巧解</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button id="prevBtn" class="round-button" aria-label="上一关">‹</button>
+      <div class="title-block">
+        <div class="eyebrow" id="chapterName">桃天·草莓晶</div>
+        <h1>玉环·巧解</h1>
+        <div class="level-name" id="levelName">桃花初结</div>
+      </div>
+      <button id="soundBtn" class="round-button sound-button" aria-label="声音">音</button>
+    </header>
+
+    <main>
+      <section class="status-strip">
+        <div><span>关卡</span><b id="levelCounter">1 / 5</b></div>
+        <div><span>已解</span><b id="progressText">0 / 6</b></div>
+        <div><span>转环</span><b id="moveCount">0</b></div>
+      </section>
+
+      <section class="control-row" aria-label="游戏控制">
+        <button id="hintBtn">提示</button>
+        <button id="resetBtn">复原</button>
+        <button id="selectBtn">选关</button>
+      </section>
+
+      <section class="game-frame">
+        <div class="frame-corner corner-a">❀</div>
+        <div class="frame-corner corner-b">❀</div>
+        <canvas id="scene" aria-label="玉环解谜棋盘"></canvas>
+        <div id="bootMessage" class="boot-message">正在陈列玉环…</div>
+        <div class="instruction">按住玉环沿圆周滑动；缺口完整越过当前金扣才会解开。</div>
+        <div class="active-label"><i></i><span>发光金扣为当前目标</span></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <dialog id="levelDialog" class="modal">
+      <button class="modal-close" data-close>×</button>
+      <div class="modal-kicker">桃天·草莓晶</div>
+      <h2>选择玉结</h2>
+      <div id="levelGrid" class="level-grid"></div>
+    </dialog>
+
+    <dialog id="completeDialog" class="modal complete-modal">
+      <div class="seal">巧</div>
+      <div class="modal-kicker">玉环轻转，万事圆满</div>
+      <h2>此结已解</h2>
+      <p id="completeText"></p>
+      <div class="modal-actions">
+        <button id="replayBtn">再解一次</button>
+        <button id="nextBtn" class="primary">下一玉结</button>
+      </div>
+    </dialog>
+
+    <audio id="bgm" src="./bgm.mp3" loop preload="none"></audio>
+  </div>
+
+  <script>
+    window.__YUHAN_READY__ = false;
+    window.addEventListener('error', function (event) {
+      const box = document.getElementById('bootMessage');
+      if (box) {
+        box.classList.add('error');
+        box.textContent = '游戏载入失败，请确认所有新版文件都已上传。';
+      }
+      console.error(event.error || event.message);
+    });
+    setTimeout(function () {
+      if (!window.__YUHAN_READY__) {
+        const box = document.getElementById('bootMessage');
+        if (box && !box.classList.contains('error')) {
+          box.classList.add('error');
+          box.textContent = '载入超时：请上传 three.module.min.js 与 app.js。';
+        }
+      }
+    }, 7000);
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
