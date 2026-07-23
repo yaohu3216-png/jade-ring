@@ -3,25 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7e9ef">
-<title>玉环</title>
+<meta name="theme-color" content="#f4e7ed">
+<title>玉环 V7</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="app">
-  <header>
-    <button id="restart">重置</button>
-    <div class="brand"><b>玉环</b><span>转一环，解一结</span></div>
-    <button id="sound" aria-label="声音">音效：开</button>
-  </header>
-  <section id="stage" class="stage">
-    <canvas id="game"></canvas>
-    <div id="levelName" class="level-name"></div>
-    <div id="hint" class="hint">旋转玉镯，让缺口经过金扣即可脱开</div>
-  </section>
-  <footer>
-    <button id="next" class="next hidden">下一关</button>
-  </footer>
+<header>
+  <button id="restart" class="pill">重置</button>
+  <div class="brand"><b>玉 环</b><span>转一环，解一结</span></div>
+  <div class="sound-group">
+    <button id="sfx" class="pill">叮当：开</button>
+    <button id="music" class="pill">音乐：关</button>
+  </div>
+</header>
+<section id="stage" class="stage">
+  <canvas id="game"></canvas>
+  <div id="levelName" class="level-name"></div>
+  <div id="hint" class="hint">转动玉环，让缺口经过金扣</div>
+</section>
+<footer><button id="next" class="next hidden">下一关</button></footer>
 </main>
 <script src="game.js"></script>
 </body>
