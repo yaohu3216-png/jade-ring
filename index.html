@@ -1,80 +1,62 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-  <meta name="theme-color" content="#251c28" />
+  <meta name="theme-color" content="#1b101c" />
   <title>玉环·巧解</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
-  <div class="petals" aria-hidden="true"></div>
   <main id="app">
-    <section id="home" class="screen active">
-      <div class="home-shell">
-        <div class="brand-row">
-          <div class="seal">玉</div>
-          <div>
-            <p class="eyebrow">YU HUAN</p>
-            <h1>玉环·巧解</h1>
-          </div>
-        </div>
-        <p class="tagline">旋玉过扣，巧解连环。</p>
-        <button id="continueBtn" class="primary">开始游戏</button>
-        <button id="chapterBtn" class="secondary">章节选择</button>
-        <div class="mini-note">所有金扣从开局即完整显示。拖动玉环管身，使缺口依次越过金扣。</div>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">桃夭草莓晶 · 第一章</p>
+        <h1>玉环·巧解</h1>
       </div>
-    </section>
+      <button id="soundBtn" class="round-btn" aria-label="声音">音</button>
+    </header>
 
-    <section id="chapters" class="screen">
-      <header class="topbar">
-        <button id="chaptersBack" class="round-btn">‹</button>
-        <div><p class="eyebrow">CHAPTERS</p><h2>章节选择</h2></div>
-        <span></span>
-      </header>
-      <div id="chapterGrid" class="chapter-grid"></div>
-    </section>
-
-    <section id="levels" class="screen">
-      <header class="topbar">
-        <button id="levelsBack" class="round-btn">‹</button>
-        <div><p id="levelsEyebrow" class="eyebrow"></p><h2>关卡选择</h2></div>
-        <span></span>
-      </header>
-      <div id="levelGrid" class="level-grid"></div>
-    </section>
-
-    <section id="gameScreen" class="screen">
-      <header class="topbar game-topbar">
-        <button id="gameBack" class="round-btn">‹</button>
-        <div class="game-title"><p id="chapterName" class="eyebrow"></p><h2 id="levelName"></h2></div>
-        <button id="soundBtn" class="round-btn">音</button>
-      </header>
-      <div class="hud">
-        <span>转动 <b id="moves">0</b></span>
+    <section class="hud">
+      <button id="prevBtn">‹</button>
+      <div class="level-copy">
+        <span id="levelNo">第 1 关</span>
+        <strong id="levelName">桃花初结</strong>
+      </div>
+      <div class="actions">
         <button id="hintBtn">提示</button>
         <button id="resetBtn">复原</button>
-        <button id="chooseBtn">选关</button>
+        <button id="nextBtn">选关</button>
       </div>
-      <div class="board-shell">
-        <canvas id="game" width="900" height="1100"></canvas>
-        <div id="toast" class="toast"></div>
-        <div id="complete" class="complete">
-          <div class="complete-card">
-            <div class="seal large">解</div>
-            <h3>巧解成功</h3>
-            <p id="completeText"></p>
-            <div class="complete-actions">
-              <button id="replayBtn" class="secondary">重玩</button>
-              <button id="nextBtn" class="primary">下一关</button>
-            </div>
-          </div>
+    </section>
+
+    <section class="stage-shell">
+      <canvas id="scene"></canvas>
+      <div class="stage-vignette"></div>
+      <div id="toast" class="toast" aria-live="polite"></div>
+      <div id="complete" class="complete hidden">
+        <div class="complete-card">
+          <span>巧解成功</span>
+          <h2 id="completeTitle">桃花初结</h2>
+          <p>玉环尽解，花影自开。</p>
+          <button id="continueBtn">下一关</button>
         </div>
       </div>
-      <p class="instruction">按住玉环管身左右滑动。缺口必须完整越过金扣中心，才能解除该扣。</p>
     </section>
+
+    <footer>
+      <p id="instruction">按住玉环左右滑动。让缺口完整越过金扣，按正确顺序逐一解开。</p>
+      <div class="legend"><span class="dot active"></span>可解金扣 <span class="dot dormant"></span>后续金扣</div>
+    </footer>
   </main>
-  <script src="levels.js"></script>
-  <script src="game.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
