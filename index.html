@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#ecd1d6" />
+  <title>玉环·巧解</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="chapterScreen" class="screen active chapter-screen" aria-label="章节选择">
+      <div class="scene-bg chapter-scene"></div>
+      <div class="scene-veil"></div>
+      <div class="petal-field" aria-hidden="true"></div>
+      <header class="chapter-header">
+        <div class="hanging-brand"><span>玉环</span><span>巧解</span></div>
+        <div class="header-plaque">
+          <small>YU HUAN · QIAO JIE</small>
+          <h1>章节选择</h1>
+          <p>总进度：<strong id="totalProgress">0 / 88</strong></p>
+        </div>
+      </header>
+      <main class="chapter-content">
+        <div id="chapterGrid" class="chapter-grid"></div>
+        <h2 class="series-heading"><span></span>独立系列关卡<span></span></h2>
+        <div class="series-grid">
+          <button class="series-card dunhuang" disabled><b>敦煌系列</b><em>未解锁</em></button>
+          <button class="series-card palace" disabled><b>故宫系列</b><em>未解锁</em></button>
+          <button class="series-card shanhai" disabled><b>山海经系列</b><em>未解锁</em></button>
+          <button class="series-card solar" disabled><b>二十四节气</b><em>未解锁</em></button>
+        </div>
+      </main>
+      <nav class="bottom-nav" aria-label="主导航">
+        <button class="active">章节</button><button>每日挑战</button><button>收藏</button>
+      </nav>
+    </section>
+
+    <section id="levelScreen" class="screen level-screen" aria-label="关卡选择">
+      <div id="levelScene" class="scene-bg"></div><div class="scene-veil"></div>
+      <header class="sub-header">
+        <button id="levelBack" class="round-control" type="button" aria-label="返回">‹</button>
+        <div class="header-plaque compact">
+          <small id="levelChapterNo">第一章</small>
+          <h1 id="levelChapterTitle">桃天草莓晶</h1>
+        </div>
+        <div id="levelGem" class="level-gem"></div>
+      </header>
+      <main class="level-content">
+        <p class="chapter-note" id="chapterNote"></p>
+        <div id="levelGrid" class="level-grid"></div>
+      </main>
+    </section>
+
+    <section id="gameScreen" class="screen game-screen" aria-label="玉环巧解游戏">
+      <div id="gameScene" class="scene-bg"></div><div class="scene-veil game-veil"></div>
+      <div class="petal-field game-petals" aria-hidden="true"></div>
+      <header class="game-header">
+        <div class="hanging-brand game-brand"><span>玉环</span><span>巧解</span></div>
+        <div class="game-title-plaque">
+          <small id="gameChapterLabel">第一章 · 桃天草莓晶</small>
+          <h1 id="gameLevelTitle">初见玉结</h1>
+          <p>沿圆周转动玉环，让缺口完整穿过对应金扣</p>
+        </div>
+        <div class="timer"><span>◷</span><strong id="timerText">00:00</strong></div>
+      </header>
+
+      <main class="game-main">
+        <aside class="step-panel">步数<strong id="movesText">0</strong></aside>
+        <section class="jade-board-wrap" aria-label="游戏棋盘">
+          <svg id="boardSvg" viewBox="0 0 900 1050" role="img" aria-label="旋转玉环并逐个解除金扣"></svg>
+          <div id="toast" class="toast" aria-live="polite"></div>
+        </section>
+        <aside class="game-controls">
+          <button id="hintBtn" type="button"><span>✦</span>提示</button>
+          <button id="resetBtn" type="button"><span>↻</span>重置</button>
+          <button id="soundBtn" type="button"><span>♪</span>声音</button>
+          <button id="exitBtn" type="button"><span>×</span>退出</button>
+        </aside>
+      </main>
+      <p id="gameTip" class="game-tip">所有金扣从开局即显示。手指沿玉环圆周转动，不是左右平移。</p>
+    </section>
+
+    <div id="completeModal" class="modal" aria-hidden="true">
+      <div class="complete-card">
+        <div class="complete-gem">✦</div>
+        <small>玉结已解</small>
+        <h2>巧解成功</h2>
+        <p id="resultText">玉环轻转，万事圆满。</p>
+        <div><button id="replayBtn" type="button">再解一次</button><button id="nextBtn" type="button">下一关</button></div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="bgm" src="assets/bgm.mp3" loop preload="auto"></audio>
+  <audio id="touchSound" src="assets/jade-touch.wav" preload="auto"></audio>
+  <audio id="releaseSound" src="assets/jade-release.wav" preload="auto"></audio>
+  <audio id="completeSound" src="assets/jade-complete.wav" preload="auto"></audio>
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
