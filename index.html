@@ -1,5 +1,48 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>玉环 · 巧解</title><link rel="stylesheet" href="style.css"></head><body>
-<div id="app">
-<section id="gallery" class="page active"><header><div class="eyebrow">玉 环 · 八 玉 华 章</div><h1>藏玉阁</h1><p>每章第一关可免费试玩，先赏玉色，再解玉结。</p></header><div id="chapters" class="chapter-grid"></div></section>
-<section id="game" class="page"><div class="topbar"><button id="backBtn">‹</button><div><div id="chapterName" class="eyebrow"></div><h2 id="levelName"></h2></div><button id="soundBtn">音</button></div><p id="verse" class="verse"></p><div class="hud"><span id="stepText">动作 0</span><button id="hintBtn">点拨</button><button id="resetBtn">复原</button></div><div class="board-wrap"><canvas id="board" width="900" height="1120"></canvas><div id="toast"></div></div><p class="help">按住玉环拖动。沿其可通行路径转动并抽离，金扣会留在原结构中。</p></section>
-</div><audio id="bgm" src="bgm.mp3" loop preload="auto"></audio><script src="game.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#0f2d29" />
+  <title>玉环 · 巧解原型</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <section id="gallery" class="screen active" aria-label="藏玉阁">
+      <header class="hero">
+        <div class="eyebrow">YU HUAN · 玉器巧解</div>
+        <h1>藏玉阁</h1>
+        <p>八玉入境，一环一解。每章首关均可试玩。</p>
+      </header>
+      <div id="chapterGrid" class="chapter-grid"></div>
+      <footer class="gallery-foot">拖动玉环穿过金扣，逐层抽离。玩法参考传统解环与九连环的空间逻辑。</footer>
+    </section>
+
+    <section id="gameScreen" class="screen" aria-label="游戏">
+      <header class="game-header">
+        <button id="backBtn" class="round-btn" aria-label="返回">‹</button>
+        <div class="title-stack">
+          <div id="chapterName" class="eyebrow"></div>
+          <h2 id="levelName">初见玉结</h2>
+          <p id="quote"></p>
+        </div>
+        <button id="soundBtn" class="round-btn" aria-label="声音">音</button>
+      </header>
+
+      <div class="stats-row">
+        <div class="pill"><span>动作</span><strong id="moves">0</strong></div>
+        <button id="hintBtn" class="pill action">点拨</button>
+        <button id="resetBtn" class="pill action">复原</button>
+      </div>
+
+      <section class="board-shell">
+        <canvas id="game" width="900" height="1120" aria-label="玉环拆解棋盘"></canvas>
+        <div id="toast" class="toast"></div>
+      </section>
+      <p class="instruction">按住环内移动整只玉环；按住玉环管身绕环心滑动可旋转。让缺口真正穿过金扣，再把玉环抽离。</p>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
