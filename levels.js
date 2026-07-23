@@ -1,39 +1,25 @@
-window.YH_DATA = {
+window.YH_DATA={
  chapters:[
-  {id:'qing',name:'青玉章',quote:'君子比德于玉，温润而泽。',jade:['#e8fff6','#8ecfb6','#397e68'],bg:['#d9e5dc','#8fa89d'],accent:'#567f70'},
-  {id:'white',name:'羊脂白玉',quote:'皎若凝脂，静若初雪。',jade:['#fffdf0','#ead9ae','#b69e70'],bg:['#efe4d0','#bcae98'],accent:'#9d8765'},
-  {id:'bi',name:'碧玉章',quote:'碧色含春，清光入怀。',jade:['#d7f0ce','#62a764','#265d3b'],bg:['#dfe6d1','#899c7d'],accent:'#587151'},
-  {id:'fei',name:'翡翠章',quote:'翠色盈袖，生意自来。',jade:['#ddffe6','#39b96b','#08764a'],bg:['#d8e6dc','#719b85'],accent:'#397a59'},
-  {id:'yellow',name:'黄玉章',quote:'温金含光，厚德载物。',jade:['#fff4b5','#dda83d','#83561b'],bg:['#eadfc4','#b99969'],accent:'#9a7537'},
-  {id:'purple',name:'紫玉章',quote:'烟霞入佩，紫气凝华。',jade:['#f3dcff','#b27bd5','#664182'],bg:['#e5dce7','#a28ba8'],accent:'#7d6488'},
-  {id:'black',name:'墨玉章',quote:'墨色藏锋，静观万象。',jade:['#8da79c','#254b43','#071b18'],bg:['#d7ddd8','#87978e'],accent:'#405b50'},
-  {id:'red',name:'赤玉章',quote:'丹心照玉，赤诚如初。',jade:['#ffd9cd','#d65e50','#7f2929'],bg:['#eadbd4','#a87e73'],accent:'#905248'}
+  {id:'qing',name:'青玉章',quote:'君子比德于玉，温润而泽。',jade:['#eafff8','#9bd8c3','#397f68'],bg:['#e9f0e9','#adc2b6'],accent:'#658b7d'},
+  {id:'white',name:'羊脂白玉',quote:'皎若凝脂，静若初雪。',jade:['#fffdf2','#eee0bd','#bba777'],bg:['#f2eadc','#cbbda6'],accent:'#a18d68'},
+  {id:'bi',name:'碧玉章',quote:'碧色含春，清光入怀。',jade:['#e6f7df','#78b27a','#345f40'],bg:['#e7eadb','#a5b19a'],accent:'#657c5e'},
+  {id:'fei',name:'翡翠章',quote:'翠色盈袖，生意自来。',jade:['#e3ffe9','#43bb73','#0d754b'],bg:['#e0ece3','#90ad9c'],accent:'#4b8064'},
+  {id:'yellow',name:'黄玉章',quote:'温金含光，厚德载物。',jade:['#fff7c5','#e2b64d','#8c621d'],bg:['#eee5cf','#c4aa7e'],accent:'#9b7a40'},
+  {id:'purple',name:'紫玉章',quote:'烟霞入佩，紫气凝华。',jade:['#f7e7ff','#c48bdd','#744b8f'],bg:['#eee6ef','#b4a0bb'],accent:'#846e90'},
+  {id:'black',name:'墨玉章',quote:'墨色藏锋，静观万象。',jade:['#9fb0a9','#36564e','#10231f'],bg:['#dde3df','#9aa79f'],accent:'#52675f'},
+  {id:'red',name:'赤玉章',quote:'丹心照玉，赤诚如初。',jade:['#ffe1d8','#d86a5c','#82332f'],bg:['#efe1dc','#b69084'],accent:'#955f55'}
  ],
  levels:[
-  {name:'初见玉结',rings:[
-    {id:'A',x:450,y:520,r:205,gap:-1.8,z:1}
-   ],clasps:[{id:'c1',host:'A',target:'A',angle:-.18,diamond:true}]},
-  {name:'双燕衔环',rings:[
-    {id:'A',x:330,y:510,r:180,gap:2.7,z:1},{id:'B',x:570,y:510,r:180,gap:.42,z:2}
-   ],clasps:[
-    {id:'c1',host:'A',target:'B',angle:.02,active:true},{id:'c2',host:'B',target:'A',angle:Math.PI,activeWhenRemoved:['B']}
-   ]},
-  {name:'流云三叠',rings:[
-    {id:'A',x:450,y:280,r:150,gap:-1.2,z:3},{id:'B',x:315,y:560,r:168,gap:2.2,z:2},{id:'C',x:585,y:560,r:168,gap:.85,z:1}
-   ],clasps:[
-    {id:'c1',host:'A',target:'B',angle:2.15},{id:'c2',host:'A',target:'C',angle:.99},{id:'c3',host:'B',target:'C',angle:.05,activeWhenRemoved:['A']}
-   ]},
-  {name:'回环相生',rings:[
-    {id:'A',x:300,y:340,r:145,gap:2.9,z:4},{id:'B',x:600,y:340,r:145,gap:.15,z:3},{id:'C',x:300,y:690,r:145,gap:-2.5,z:2},{id:'D',x:600,y:690,r:145,gap:-.65,z:1}
-   ],clasps:[
-    {id:'c1',host:'A',target:'B',angle:.0},{id:'c2',host:'A',target:'C',angle:1.55},{id:'c3',host:'B',target:'D',angle:1.58},{id:'c4',host:'C',target:'D',angle:.02,activeWhenRemoved:['A','B']}
-   ]},
-  {name:'五星连珠',rings:[
-    {id:'A',x:450,y:210,r:126,gap:-1.2,z:5},{id:'B',x:250,y:420,r:132,gap:2.5,z:4},{id:'C',x:650,y:420,r:132,gap:.5,z:3},{id:'D',x:330,y:720,r:136,gap:-2.1,z:2},{id:'E',x:570,y:720,r:136,gap:-1.0,z:1}
-   ],clasps:[
-    {id:'c1',host:'A',target:'B',angle:2.23},{id:'c2',host:'A',target:'C',angle:.91},
-    {id:'c3',host:'B',target:'D',angle:1.24,activeWhenRemoved:['A']},{id:'c4',host:'C',target:'E',angle:1.9,activeWhenRemoved:['A']},
-    {id:'c5',host:'D',target:'E',angle:.02,activeWhenRemoved:['B','C'],diamond:true}
-   ]}
+  {name:'五环试结',rings:[
+   {id:'A',x:450,y:220,r:128,gap:-1.00,z:5},{id:'B',x:270,y:425,r:132,gap:2.75,z:4},{id:'C',x:630,y:425,r:132,gap:.35,z:3},{id:'D',x:335,y:700,r:136,gap:-2.15,z:2},{id:'E',x:565,y:700,r:136,gap:-.85,z:1}
+  ],clasps:[
+   {id:'ab',a:'A',b:'B',unlock:'A',diamond:false},{id:'ac',a:'A',b:'C',unlock:'A'},
+   {id:'bd',a:'B',b:'D',unlock:'B',after:['A']},{id:'ce',a:'C',b:'E',unlock:'C',after:['A']},
+   {id:'de',a:'D',b:'E',unlock:'D',after:['B','C'],diamond:true}
+  ]},
+  {name:'双燕衔环',rings:[{id:'A',x:330,y:520,r:175,gap:2.60,z:2},{id:'B',x:570,y:520,r:175,gap:.42,z:1}],clasps:[{id:'ab1',a:'A',b:'B',unlock:'A'},{id:'ab2',a:'A',b:'B',unlock:'B',offset:.34,after:['A']}]},
+  {name:'流云三叠',rings:[{id:'A',x:450,y:280,r:148,gap:-1.1,z:3},{id:'B',x:320,y:590,r:168,gap:2.35,z:2},{id:'C',x:580,y:590,r:168,gap:.75,z:1}],clasps:[{id:'ab',a:'A',b:'B',unlock:'A'},{id:'ac',a:'A',b:'C',unlock:'A'},{id:'bc',a:'B',b:'C',unlock:'B',after:['A']}]},
+  {name:'回环相生',rings:[{id:'A',x:300,y:345,r:142,gap:2.85,z:4},{id:'B',x:600,y:345,r:142,gap:.2,z:3},{id:'C',x:300,y:700,r:142,gap:-2.45,z:2},{id:'D',x:600,y:700,r:142,gap:-.7,z:1}],clasps:[{id:'ab',a:'A',b:'B',unlock:'A'},{id:'ac',a:'A',b:'C',unlock:'A'},{id:'bd',a:'B',b:'D',unlock:'B',after:['A']},{id:'cd',a:'C',b:'D',unlock:'C',after:['A','B']}]},
+  {name:'七巧连衡',rings:[{id:'A',x:450,y:175,r:112,gap:-1.1,z:7},{id:'B',x:245,y:330,r:116,gap:2.7,z:6},{id:'C',x:655,y:330,r:116,gap:.45,z:5},{id:'D',x:300,y:550,r:120,gap:2.95,z:4},{id:'E',x:600,y:550,r:120,gap:.15,z:3},{id:'F',x:350,y:790,r:124,gap:-2.1,z:2},{id:'G',x:550,y:790,r:124,gap:-.9,z:1}],clasps:[{id:'ab',a:'A',b:'B',unlock:'A'},{id:'ac',a:'A',b:'C',unlock:'A'},{id:'bd',a:'B',b:'D',unlock:'B',after:['A']},{id:'ce',a:'C',b:'E',unlock:'C',after:['A']},{id:'df',a:'D',b:'F',unlock:'D',after:['B']},{id:'eg',a:'E',b:'G',unlock:'E',after:['C']},{id:'fg',a:'F',b:'G',unlock:'F',after:['D','E'],diamond:true}]}
  ]
 };
