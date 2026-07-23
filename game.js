@@ -1,330 +1,60 @@
 'use strict';
 (() => {
-  const $ = (s) => document.querySelector(s);
-  const canvas = $('#c');
-  const ctx = canvas.getContext('2d');
-  const pages = [...document.querySelectorAll('.page')];
-  const bgm = $('#bgm');
-  const STORAGE = 'yuhuan_disassembly_v31';
+  const D = window.YH_DATA;
+  const $ = s => document.querySelector(s);
+  const pages=[...document.querySelectorAll('.page')];
+  const canvas=$('#gameCanvas'),ctx=canvas.getContext('2d');
+  const bgm=$('#bgm');
+  const SAVE_KEY='yuhuan_engine_1_save';
+  const DESIGN={w:900,h:1100};
+  const state={chapter:0,levelIndex:0,completed:{},unlockedByChapter:Array(8).fill(1),level:null,rings:[],gates:[],selected:-1,gesture:null,moves:0,started:0,timer:null,sound:true,music:false,audio:null,hint:-1};
 
-  const state = {
-    unlocked: 1,
-    completed: {},
-    chapter: 0,
-    levelIndex: 0,
-    level: null,
-    rings: [],
-    locks: [],
-    selected: -1,
-    mode: 'drag',
-    pointer: null,
-    moves: 0,
-    startedAt: 0,
-    elapsed: 0,
-    timer: null,
-    sound: true,
-    hintRing: -1,
-    dragging: false,
-    dragStart: null,
-    ringStart: null,
-    audioCtx: null,
-  };
+  function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');state.completed=s.completed||{};if(Array.isArray(s.unlockedByChapter))state.unlockedByChapter=s.unlockedByChapter.map(v=>Math.max(1,Math.min(11,+v||1)));}catch(_){}}
+  function save(){localStorage.setItem(SAVE_KEY,JSON.stringify({completed:state.completed,unlockedByChapter:state.unlockedByChapter}));}
+  function show(id){pages.forEach(p=>p.classList.toggle('active',p.id===id));if(id==='galleryPage')renderGallery();}
+  function applyTheme(ch){document.documentElement.style.setProperty('--bg-a',ch.bg[0]);document.documentElement.style.setProperty('--bg-b',ch.bg[1]);}
+  function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+  function renderTabs(){const el=$('#chapterTabs');el.innerHTML='';D.chapters.forEach((ch,i)=>{const b=document.createElement('button');b.textContent=ch.short;b.className=i===state.chapter?'active':'';b.onclick=()=>{state.chapter=i;renderGallery();};el.appendChild(b);});}
+  function renderGallery(){renderTabs();const ch=D.chapters[state.chapter];applyTheme(ch);$('#chapterPreview').innerHTML=`<div class="preview-jade" style="--preview-jade:${ch.jade[1]}"></div><div><h3>${ch.name}</h3><p>${ch.desc}<br>${ch.verse}</p></div>`;const grid=$('#levelGrid');grid.innerHTML='';for(let i=0;i<11;i++){const global=state.chapter*11+i;const isDemo=i===0;const unlocked=isDemo||i<state.unlockedByChapter[state.chapter];const done=!!state.completed[global];const b=document.createElement('button');b.className=`level-card${!unlocked?' locked':''}${isDemo?' demo':''}${done?' done':''}`;b.innerHTML=`<b>${i+1}</b><small>${unlocked?`第${global+1}结`:'🔒 未解锁'}</small>`;b.disabled=!unlocked;b.onclick=()=>startLevel(global);grid.appendChild(b);}}
 
-  function loadSave() {
-    try {
-      const x = JSON.parse(localStorage.getItem(STORAGE) || '{}');
-      state.unlocked = Math.max(1, Number(x.unlocked || 1));
-      state.completed = x.completed || {};
-    } catch (_) {}
-  }
-  function save() {
-    localStorage.setItem(STORAGE, JSON.stringify({unlocked: state.unlocked, completed: state.completed}));
-  }
-  function show(id) {
-    pages.forEach(p => p.classList.toggle('active', p.id === id));
-    if (id === 'levels') renderLevelGrid();
-    if (id === 'game') requestAnimationFrame(resize);
-  }
+  function startLevel(global){clearInterval(state.timer);state.levelIndex=global;state.chapter=Math.floor(global/11);state.level=D.levels[global];const ch=D.chapters[state.chapter];applyTheme(ch);state.rings=state.level.rings.map((r,id)=>({id,x:r[0],y:r[1],r:r[2],angle:r[3]*Math.PI/180,gap:r[4]*Math.PI/180,layer:r[5],removed:false,progress:0,homeX:r[0],homeY:r[1],homeA:r[3]*Math.PI/180}));state.gates=state.level.gates.map((g,id)=>({id,x:g[0],y:g[1],rot:g[2]*Math.PI/180,ringId:g[3]}));state.selected=-1;state.gesture=null;state.moves=0;state.started=Date.now();$('#chapterName').textContent=ch.name;$('#levelName').textContent=state.level.name;$('#verse').textContent=ch.verse;$('#levelNo').textContent=`${global+1}/88`;$('#moveCount').textContent='0';$('#timeCount').textContent='00:00';$('#completeModal').classList.add('hidden');$('#gestureTip').classList.remove('fade');show('gamePage');state.timer=setInterval(()=>{$('#timeCount').textContent=formatTime(Math.floor((Date.now()-state.started)/1000));},1000);draw();}
 
-  function resize() {
-    const r = canvas.getBoundingClientRect();
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.round(r.width * dpr);
-    canvas.height = Math.round(r.height * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    draw();
-  }
+  function activeRingId(){const removed=state.rings.filter(r=>r.removed).length;return state.level.order[removed]??-1;}
+  function angNorm(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;}
+  function escapeAngle(r){const e=state.level.escape[r.id];return Math.atan2(e[1],e[0]);}
+  function aligned(r){return Math.abs(angNorm(r.angle-escapeAngle(r)))<0.34;}
+  function canMove(r){return r.id===activeRingId();}
+  function pointer(e){const rect=canvas.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return{x:(p.clientX-rect.left)*DESIGN.w/rect.width,y:(p.clientY-rect.top)*DESIGN.h/rect.height};}
+  function ringHit(p){let best=-1,bd=1e9;[...state.rings].sort((a,b)=>b.layer-a.layer).forEach(r=>{if(r.removed)return;const d=Math.hypot(p.x-r.x,p.y-r.y),dd=Math.abs(d-r.r);if(dd<55&&dd<bd){best=r.id;bd=dd;}});return best;}
+  function selectedCenterHit(p,r){return Math.hypot(p.x-r.x,p.y-r.y)<r.r-48;}
 
-  function chapterForLevel(i) { return Math.floor(i / 11); }
-  function localLevel(i) { return i % 11; }
+  function down(e){e.preventDefault();ensureAudio();const p=pointer(e);let id=ringHit(p);if(id<0&&state.selected>=0&&selectedCenterHit(p,state.rings[state.selected]))id=state.selected;if(id<0)return;state.selected=id;const r=state.rings[id];const mode=selectedCenterHit(p,r)?'move':'rotate';state.gesture={mode,start:p,startX:r.x,startY:r.y,startA:r.angle,pointerA:Math.atan2(p.y-r.y,p.x-r.x)};$('#gestureTip').classList.add('fade');draw();}
+  function move(e){if(!state.gesture||state.selected<0)return;e.preventDefault();const p=pointer(e),r=state.rings[state.selected],g=state.gesture;if(g.mode==='rotate'){const a=Math.atan2(p.y-r.y,p.x-r.x);r.angle=g.startA+angNorm(a-g.pointerA);}else{let nx=g.startX+(p.x-g.start.x),ny=g.startY+(p.y-g.start.y);if(!canMove(r)){nx=r.homeX+(nx-r.homeX)*.08;ny=r.homeY+(ny-r.homeY)*.08;}else if(!aligned(r)){nx=r.homeX+(nx-r.homeX)*.18;ny=r.homeY+(ny-r.homeY)*.18;}r.x=nx;r.y=ny;updateProgress(r);}draw();}
+  function up(e){if(!state.gesture||state.selected<0)return;e.preventDefault();const r=state.rings[state.selected],mode=state.gesture.mode;state.gesture=null;state.moves++;$('#moveCount').textContent=state.moves;if(mode==='rotate'){if(canMove(r)&&aligned(r)){toast('缺口已显：请拖动环心，沿金扣空隙抽离');jadeTick(.35);}else if(!canMove(r)){toast('此环仍被外层结构牵制');softKnock();}else softKnock();}else{if(canMove(r)&&aligned(r)&&r.progress>=1){removeRing(r);}else if(Math.hypot(r.x-r.homeX,r.y-r.homeY)>8){if(!canMove(r))toast('先解开最外层的玉环');else if(!aligned(r))toast('缺口方向不对，玉身被金扣挡住');else toast('沿着出口方向继续缓缓抽出');snapBack(r);softKnock();}}draw();}
+  function updateProgress(r){const e=state.level.escape[r.id],len=Math.hypot(e[0],e[1]),ux=e[0]/len,uy=e[1]/len,dx=r.x-r.homeX,dy=r.y-r.homeY;r.progress=Math.max(0,(dx*ux+dy*uy)/(r.r*.92));}
+  function snapBack(r){const sx=r.x,sy=r.y,sa=r.angle,t0=performance.now();function f(t){const q=Math.min(1,(t-t0)/220),k=1-Math.pow(1-q,3);r.x=sx+(r.homeX-sx)*k;r.y=sy+(r.homeY-sy)*k;r.progress*=1-k;draw();if(q<1)requestAnimationFrame(f);}requestAnimationFrame(f);}
+  function removeRing(r){r.removed=true;jadeChime(false);toast('玉环已抽离，下一重显现');if(state.rings.every(x=>x.removed))finish();else{state.selected=activeRingId();setTimeout(draw,100);}}
+  function finish(){clearInterval(state.timer);state.completed[state.levelIndex]=true;const local=state.levelIndex%11;if(local<10)state.unlockedByChapter[state.chapter]=Math.max(state.unlockedByChapter[state.chapter],local+2);save();const sec=Math.floor((Date.now()-state.started)/1000);$('#resultText').textContent=`${state.moves} 次动作 · ${formatTime(sec)}`;$('#completeModal').classList.remove('hidden');jadeChime(true);}
+  function hint(){const id=activeRingId(),r=state.rings[id];state.hint=id;if(!aligned(r))toast('高亮玉环可先解：拖动玉身，让缺口朝金色箭头方向');else toast('缺口已对准：按住环心，沿金色箭头方向缓缓抽出');setTimeout(()=>{state.hint=-1;draw();},2200);draw();}
 
-  function renderTabs() {
-    const tabs = $('#tabs'); tabs.innerHTML = '';
-    YH.chapters.forEach((c, i) => {
-      const b = document.createElement('button');
-      b.textContent = c.name;
-      b.className = i === state.chapter ? 'active' : '';
-      b.onclick = () => { state.chapter = i; renderTabs(); renderLevelGrid(); };
-      tabs.appendChild(b);
-    });
-  }
-  function renderLevelGrid() {
-    renderTabs();
-    const grid = $('#grid'); grid.innerHTML = '';
-    const start = state.chapter * 11;
-    for (let j=0;j<11;j++) {
-      const global = start+j;
-      const lv = YH.levels[global];
-      const card = document.createElement('button');
-      const locked = global+1 > state.unlocked;
-      const done = !!state.completed[global];
-      card.className = 'card' + (locked?' locked':'') + (done?' done':'');
-      card.innerHTML = `<b>${j+1}</b><small>${locked?'锁':'第 '+(global+1)+' 结'}</small>`;
-      card.disabled = locked;
-      card.onclick = () => startLevel(global);
-      grid.appendChild(card);
-    }
-  }
+  function draw(){ctx.clearRect(0,0,DESIGN.w,DESIGN.h);drawBackground();drawGates(false);[...state.rings].sort((a,b)=>a.layer-b.layer).forEach(drawRing);drawGates(true);drawHint();}
+  function drawBackground(){const ch=D.chapters[state.chapter]||D.chapters[0],g=ctx.createLinearGradient(0,0,0,DESIGN.h);g.addColorStop(0,ch.bg[0]);g.addColorStop(1,ch.bg[1]);ctx.fillStyle=g;ctx.fillRect(0,0,DESIGN.w,DESIGN.h);const moon=ctx.createRadialGradient(700,155,5,700,155,95);moon.addColorStop(0,'#f4d993dd');moon.addColorStop(.35,'#e8c97988');moon.addColorStop(1,'#e8c97900');ctx.fillStyle=moon;ctx.beginPath();ctx.arc(700,155,95,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ead18aaa';ctx.beginPath();ctx.arc(700,155,48,0,Math.PI*2);ctx.fill();ctx.fillStyle='#0b2a285f';ctx.beginPath();ctx.moveTo(0,430);ctx.quadraticCurveTo(210,280,390,420);ctx.quadraticCurveTo(585,285,900,445);ctx.lineTo(900,620);ctx.lineTo(0,620);ctx.closePath();ctx.fill();ctx.fillStyle='#061c1b66';ctx.beginPath();ctx.moveTo(0,510);ctx.quadraticCurveTo(230,365,470,520);ctx.quadraticCurveTo(675,390,900,520);ctx.lineTo(900,700);ctx.lineTo(0,700);ctx.closePath();ctx.fill();ctx.strokeStyle='#d6bf8540';ctx.lineWidth=2;for(let y=655;y<1050;y+=55){ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(250,y-16,650,y+14,900,y-3);ctx.stroke();}ctx.strokeStyle='#d7c18824';for(let x=70;x<900;x+=170){ctx.beginPath();ctx.arc(x,1020,120,Math.PI*1.08,Math.PI*1.92);ctx.stroke();}}
+  function arcPath(r,offset=0){const start=r.angle+r.gap/2,end=r.angle+Math.PI*2-r.gap/2;ctx.beginPath();ctx.arc(r.x,r.y,r.r+offset,start,end,false);}
+  function drawRing(r){if(r.removed)return;const ch=D.chapters[state.chapter],sel=r.id===state.selected,hint=r.id===state.hint;ctx.save();ctx.lineCap='round';ctx.shadowColor='#000b';ctx.shadowBlur=18;ctx.shadowOffsetY=10;ctx.strokeStyle='#051817aa';ctx.lineWidth=76;arcPath(r);ctx.stroke();ctx.shadowColor='transparent';let grad=ctx.createLinearGradient(r.x-r.r,r.y-r.r,r.x+r.r,r.y+r.r);grad.addColorStop(0,ch.jade[2]);grad.addColorStop(.28,ch.jade[0]);grad.addColorStop(.56,ch.jade[1]);grad.addColorStop(.82,ch.jade[0]);grad.addColorStop(1,ch.jade[2]);ctx.strokeStyle=grad;ctx.lineWidth=64;arcPath(r);ctx.stroke();ctx.globalAlpha=.35;ctx.strokeStyle='#ffffff';ctx.lineWidth=28;arcPath(r,-8);ctx.stroke();ctx.globalAlpha=.7;ctx.strokeStyle='#ffffff';ctx.lineWidth=7;arcPath(r,-21);ctx.stroke();ctx.globalAlpha=.28;ctx.strokeStyle=ch.jade[2];ctx.lineWidth=10;arcPath(r,20);ctx.stroke();ctx.globalAlpha=1;drawJadeVeins(r,ch);drawEnds(r,ch);if(sel||hint){ctx.shadowColor=hint?'#f3cf67':'#d9fff3';ctx.shadowBlur=22;ctx.strokeStyle=hint?'#f0c85fbb':'#d8fff488';ctx.lineWidth=5;arcPath(r,37);ctx.stroke();}ctx.restore();}
+  function drawJadeVeins(r,ch){ctx.save();ctx.strokeStyle='#315f5260';ctx.lineWidth=3;ctx.lineCap='round';for(let i=0;i<5;i++){const a=r.angle+r.gap/2+.55+i*(5.1/5);const x=r.x+Math.cos(a)*r.r,y=r.y+Math.sin(a)*r.r;ctx.beginPath();ctx.moveTo(x-Math.sin(a)*24,y+Math.cos(a)*24);ctx.quadraticCurveTo(x+Math.cos(a)*11,y+Math.sin(a)*11,x+Math.sin(a)*20,y-Math.cos(a)*20);ctx.stroke();}ctx.restore();}
+  function drawEnds(r,ch){for(const a of [r.angle+r.gap/2,r.angle-r.gap/2]){const x=r.x+Math.cos(a)*r.r,y=r.y+Math.sin(a)*r.r;ctx.save();ctx.translate(x,y);ctx.rotate(a);const eg=ctx.createRadialGradient(-9,-10,2,0,0,34);eg.addColorStop(0,'#fff');eg.addColorStop(.38,ch.jade[0]);eg.addColorStop(1,ch.jade[2]);ctx.fillStyle=eg;ctx.strokeStyle='#fff9';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,0,31,24,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();}}
+  function drawGates(front){state.gates.forEach(g=>{const r=state.rings[g.ringId];if(r&&r.removed)return;ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.rot);if(!front){ctx.fillStyle='#3c210d';roundRect(-49,-35,98,70,18);ctx.fill();}else{ctx.shadowColor='#0008';ctx.shadowBlur=12;ctx.shadowOffsetY=6;const gg=ctx.createLinearGradient(-45,-35,45,35);gg.addColorStop(0,'#7b3e0d');gg.addColorStop(.18,'#edb84e');gg.addColorStop(.48,'#ffe39a');gg.addColorStop(.72,'#c97c20');gg.addColorStop(1,'#6b3109');ctx.fillStyle=gg;roundRect(-47,-33,94,66,17);ctx.fill();ctx.shadowColor='transparent';ctx.strokeStyle='#ffe4a2';ctx.lineWidth=3;roundRect(-39,-26,78,52,13);ctx.stroke();ctx.strokeStyle='#7a400f';ctx.lineWidth=3;ctx.beginPath();ctx.arc(-13,0,12,0,Math.PI*2);ctx.arc(13,0,12,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(-2,-12);ctx.quadraticCurveTo(0,0,2,12);ctx.stroke();ctx.fillStyle='#8e4c14';ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();}ctx.restore();});}
+  function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+  function drawHint(){const id=state.hint>=0?state.hint:activeRingId(),r=state.rings[id];if(!r||r.removed)return;const e=state.level.escape[id],a=Math.atan2(e[1],e[0]);ctx.save();ctx.translate(r.x+Math.cos(a)*(r.r+92),r.y+Math.sin(a)*(r.r+92));ctx.rotate(a);ctx.strokeStyle='#efd27ccc';ctx.fillStyle='#efd27ccc';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-35,0);ctx.lineTo(28,0);ctx.stroke();ctx.beginPath();ctx.moveTo(28,0);ctx.lineTo(8,-16);ctx.lineTo(8,16);ctx.closePath();ctx.fill();ctx.restore();}
 
-  function buildLocks(rings, links) {
-    return links.map((pair, idx) => {
-      const a = rings[pair[0]], b = rings[pair[1]];
-      return {a:pair[0], b:pair[1], x:(a.x+b.x)/2, y:(a.y+b.y)/2, released:false, pulse:0, idx};
-    });
-  }
+  function ensureAudio(){if(!state.audio)state.audio=new(window.AudioContext||window.webkitAudioContext)();if(state.audio.state==='suspended')state.audio.resume();}
+  function partial(freq,start,dur,gain){if(!state.sound)return;ensureAudio();const a=state.audio,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type='sine';o.frequency.value=freq;f.type='highpass';f.frequency.value=500;g.gain.setValueAtTime(.0001,a.currentTime+start);g.gain.exponentialRampToValueAtTime(gain,a.currentTime+start+.006);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+start+dur);o.connect(f).connect(g).connect(a.destination);o.start(a.currentTime+start);o.stop(a.currentTime+start+dur+.02);}
+  function jadeTick(strength=.25){const det=(Math.random()-.5)*18;partial(1680+det,0,.42,.07*strength);partial(2520+det,0,.25,.035*strength);partial(980+det,.012,.55,.028*strength);}
+  function softKnock(){partial(720,0,.13,.018);partial(1180,.01,.09,.012);}
+  function jadeChime(win){const seq=win?[0,.13,.29]:[0,.11];seq.forEach((t,i)=>{const base=(win?[1240,1570,1960]:[1430,1830])[i]||1960;partial(base,t,.8,.055);partial(base*1.52,t+.005,.45,.025);partial(base*.62,t+.01,1.05,.018);});}
+  function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),1900);}
 
-  function startLevel(global) {
-    clearInterval(state.timer);
-    state.levelIndex = global;
-    state.chapter = chapterForLevel(global);
-    state.level = YH.levels[global];
-    state.moves = 0; state.elapsed = 0; state.selected = -1; state.hintRing=-1;
-    state.mode='drag'; $('#mode').textContent='拖环'; $('#mode').classList.remove('active');
-    const ch = YH.chapters[state.chapter];
-    const rect = canvas.getBoundingClientRect();
-    const W = Math.max(320, rect.width || 700), H = Math.max(480, rect.height || 760);
-    state.rings = state.level.rings.map((r,i) => ({
-      id:i, x:r[0]*W, y:r[1]*H, r:r[2]*Math.min(W,H), angle:r[3]*Math.PI/180,
-      removed:false, scale:1, alpha:1, homeX:r[0]*W, homeY:r[1]*H,
-      targetOrder: state.level.order.indexOf(i),
-    }));
-    state.locks = buildLocks(state.rings, state.level.links);
-    $('#chapter').textContent = ch.name;
-    $('#title').textContent = state.level.name;
-    $('#verse').textContent = ch.verse;
-    $('#no').textContent = `${global+1}/88`;
-    $('#moves').textContent = '0'; $('#time').textContent='00:00';
-    $('#done').classList.add('hidden');
-    applyTheme(ch);
-    show('game');
-    state.startedAt = Date.now();
-    state.timer = setInterval(() => { state.elapsed=Math.floor((Date.now()-state.startedAt)/1000); $('#time').textContent=formatTime(state.elapsed); }, 1000);
-    setTimeout(resize, 50);
-  }
-
-  function applyTheme(ch) {
-    document.documentElement.style.setProperty('--bg1', ch.bg[0]);
-    document.documentElement.style.setProperty('--bg2', ch.bg[1]);
-  }
-  function formatTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
-
-  function activeOrder() {
-    return state.rings.filter(r=>r.removed).length;
-  }
-  function nextRingId() {
-    const ord = activeOrder();
-    const r = state.rings.find(x=>x.targetOrder===ord);
-    return r ? r.id : -1;
-  }
-
-  function ringGapPoint(r) {
-    return {x:r.x+Math.cos(r.angle)*r.r, y:r.y+Math.sin(r.angle)*r.r};
-  }
-  function normalize(a) { while(a>Math.PI)a-=Math.PI*2; while(a<-Math.PI)a+=Math.PI*2; return a; }
-  function ringReady(r) {
-    if (r.id !== nextRingId()) return false;
-    const board = canvas.getBoundingClientRect();
-    const center = {x:board.width/2,y:board.height/2};
-    const escapeAngle = Math.atan2(r.y-center.y, r.x-center.x);
-    return Math.abs(normalize(r.angle-escapeAngle)) < (state.level.tolerance||20)*Math.PI/180;
-  }
-
-  function hitRing(x,y) {
-    let best=-1,bestD=1e9;
-    state.rings.forEach((r,i)=>{
-      if(r.removed)return;
-      const d=Math.hypot(x-r.x,y-r.y);
-      const ringDist=Math.abs(d-r.r);
-      if(ringDist<28 && ringDist<bestD){best=i;bestD=ringDist;}
-    });
-    return best;
-  }
-
-  function pointerPos(e) {
-    const rect=canvas.getBoundingClientRect();
-    const p=e.touches?e.touches[0]:e;
-    return {x:p.clientX-rect.left,y:p.clientY-rect.top};
-  }
-
-  function onDown(e) {
-    e.preventDefault();
-    ensureAudio();
-    const p=pointerPos(e), i=hitRing(p.x,p.y);
-    if(i<0)return;
-    state.selected=i; state.pointer=p; state.dragStart=p; state.dragging=true;
-    const r=state.rings[i]; state.ringStart={x:r.x,y:r.y,angle:r.angle};
-    draw();
-  }
-  function onMove(e) {
-    if(!state.dragging || state.selected<0)return;
-    e.preventDefault();
-    const p=pointerPos(e), r=state.rings[state.selected];
-    if(state.mode==='rotate') {
-      const a0=Math.atan2(state.dragStart.y-r.y,state.dragStart.x-r.x);
-      const a1=Math.atan2(p.y-r.y,p.x-r.x);
-      r.angle=state.ringStart.angle+(a1-a0);
-    } else {
-      const dx=p.x-state.dragStart.x,dy=p.y-state.dragStart.y;
-      const ready=ringReady(r);
-      if(ready) { r.x=state.ringStart.x+dx; r.y=state.ringStart.y+dy; }
-      else { r.x=state.ringStart.x+dx*.12; r.y=state.ringStart.y+dy*.12; }
-    }
-    state.pointer=p; draw();
-  }
-  function onUp(e) {
-    if(!state.dragging || state.selected<0)return;
-    e.preventDefault();
-    const r=state.rings[state.selected];
-    state.dragging=false; state.moves++; $('#moves').textContent=state.moves;
-    if(state.mode==='drag') {
-      if(ringReady(r) && isOutside(r)) {
-        removeRing(r);
-      } else {
-        const moved=Math.hypot(r.x-r.homeX,r.y-r.homeY);
-        if(moved>8) {
-          if(!ringReady(r)) { toast(r.id===nextRingId()?'先旋转开口，对准外侧通道':'此环尚被下层玉扣牵制'); dullClink(); }
-          animateSnap(r);
-        } else if (r.id===nextRingId()) {
-          brightTick();
-        }
-      }
-    } else {
-      if(ringReady(r)) { toast('通道已显，可切换“拖环”向外抽离'); brightTick(); }
-      else dullClink();
-    }
-    state.selected=-1; draw();
-  }
-
-  function isOutside(r) {
-    const rect=canvas.getBoundingClientRect();
-    return r.x+r.r<35 || r.x-r.r>rect.width-35 || r.y+r.r<35 || r.y-r.r>rect.height-35 || Math.hypot(r.x-r.homeX,r.y-r.homeY)>r.r*1.05;
-  }
-  function animateSnap(r) {
-    const sx=r.x,sy=r.y,start=performance.now();
-    function f(t){const q=Math.min(1,(t-start)/190),e=1-Math.pow(1-q,3);r.x=sx+(r.homeX-sx)*e;r.y=sy+(r.homeY-sy)*e;draw();if(q<1)requestAnimationFrame(f);}requestAnimationFrame(f);
-  }
-  function removeRing(r) {
-    r.removed=true; r.alpha=0; state.locks.forEach(l=>{if(l.a===r.id||l.b===r.id){l.released=true;l.pulse=1;}});
-    jadeChime();
-    toast('玉环已抽离，下一重显现');
-    if(state.rings.every(x=>x.removed)) finishLevel();
-  }
-
-  function finishLevel() {
-    clearInterval(state.timer);
-    state.completed[state.levelIndex]=true;
-    state.unlocked=Math.max(state.unlocked,Math.min(88,state.levelIndex+2)); save();
-    $('#result').textContent=`${state.moves} 次动作 · ${formatTime(state.elapsed)}`;
-    $('#done').classList.remove('hidden'); jadeChime(true);
-  }
-
-  function resetLevel() { startLevel(state.levelIndex); }
-  function hint() {
-    const id=nextRingId(); state.hintRing=id;
-    const r=state.rings[id];
-    if(!r)return;
-    if(!ringReady(r)) toast(`先转动高亮玉环，让开口朝向棋盘外侧`);
-    else toast('开口已就位，切换“拖环”并向外抽离');
-    setTimeout(()=>{state.hintRing=-1;draw();},1800); draw();
-  }
-
-  function ensureAudio() {
-    if(!state.audioCtx) state.audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(state.audioCtx.state==='suspended')state.audioCtx.resume();
-  }
-  function tone(freq,start,dur,gain,type='sine') {
-    if(!state.sound)return; ensureAudio(); const ac=state.audioCtx;
-    const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(freq,ac.currentTime+start);
-    g.gain.setValueAtTime(0.0001,ac.currentTime+start);g.gain.exponentialRampToValueAtTime(gain,ac.currentTime+start+.008);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+start+dur);
-    o.connect(g).connect(ac.destination);o.start(ac.currentTime+start);o.stop(ac.currentTime+start+dur+.02);
-  }
-  function brightTick(){ tone(1550,0,.09,.035,'sine');tone(2320,.012,.12,.025,'triangle'); }
-  function dullClink(){ tone(420,0,.07,.025,'triangle');tone(760,.018,.08,.012,'sine'); }
-  function jadeChime(big=false){
-    const notes=big?[1175,1568,2093,2637]:[1397,1865,2349];
-    notes.forEach((n,i)=>{tone(n,i*.045,.34-i*.03,.045-i*.007,'sine');tone(n*2.01,i*.045+.008,.18,.012,'triangle');});
-    tone(big?880:1047,.01,.5,.018,'sine');
-  }
-
-  function roundedRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
-  function drawBackground(W,H,ch) {
-    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,ch.bg[0]);g.addColorStop(1,ch.bg[1]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    ctx.globalAlpha=.16;ctx.fillStyle='#e9d393';ctx.beginPath();ctx.arc(W*.79,H*.15,Math.min(W,H)*.055,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=.18;ctx.fillStyle='#061d1b';
-    for(let k=0;k<3;k++){ctx.beginPath();ctx.moveTo(0,H*(.34+k*.07));for(let x=0;x<=W;x+=20)ctx.lineTo(x,H*(.34+k*.07)-Math.sin(x/W*Math.PI*(2+k))*22-k*6);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();}
-    ctx.globalAlpha=.1;ctx.strokeStyle='#d5c99d';ctx.lineWidth=1;for(let y=H*.58;y<H;y+=34){ctx.beginPath();ctx.moveTo(0,y);ctx.quadraticCurveTo(W*.5,y-8,W,y);ctx.stroke();}
-    ctx.globalAlpha=1;
-  }
-
-  function drawRing(r,ch,selected) {
-    if(r.removed)return;
-    const tube=Math.max(24,r.r*.145), gap=.48;
-    ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.angle);
-    if(selected||state.hintRing===r.id){ctx.shadowColor='#f6db79';ctx.shadowBlur=18;}
-    ctx.lineCap='round';
-    ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=tube+9;ctx.beginPath();ctx.arc(4,7,r.r,-Math.PI+gap/2,Math.PI-gap/2);ctx.stroke();
-    const grad=ctx.createLinearGradient(-r.r,-r.r,r.r,r.r);grad.addColorStop(0,ch.jade[0]);grad.addColorStop(.28,ch.jade[1]);grad.addColorStop(.58,ch.jade[0]);grad.addColorStop(1,ch.jade[2]);
-    ctx.strokeStyle=grad;ctx.lineWidth=tube;ctx.beginPath();ctx.arc(0,0,r.r,-Math.PI+gap/2,Math.PI-gap/2);ctx.stroke();
-    ctx.strokeStyle='rgba(255,255,255,.58)';ctx.lineWidth=Math.max(4,tube*.18);ctx.beginPath();ctx.arc(-2,-3,r.r,-2.65,-.15);ctx.stroke();
-    ctx.strokeStyle='rgba(20,80,60,.18)';ctx.lineWidth=2;for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(0,0,r.r+(i-1)*tube*.18,-2.2+i*.9,-1.75+i*.9);ctx.stroke();}
-    // jade end faces at the two C tips
-    for(const a of [-Math.PI+gap/2,Math.PI-gap/2]){const x=Math.cos(a)*r.r,y=Math.sin(a)*r.r;ctx.fillStyle=ch.jade[0];ctx.beginPath();ctx.ellipse(x,y,tube*.43,tube*.32,a,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(35,75,58,.35)';ctx.lineWidth=2;ctx.stroke();}
-    ctx.restore();
-  }
-
-  function drawLock(l,ch) {
-    if(l.released)return;
-    const a=state.rings[l.a],b=state.rings[l.b]; if(a.removed||b.removed)return;
-    l.x=(a.x+b.x)/2;l.y=(a.y+b.y)/2;
-    const angle=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2;
-    const w=Math.max(48,Math.min(a.r,b.r)*.34),h=Math.max(34,w*.68);
-    ctx.save();ctx.translate(l.x,l.y);ctx.rotate(angle);ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=10;ctx.shadowOffsetY=5;
-    const g=ctx.createLinearGradient(-w/2,-h/2,w/2,h/2);g.addColorStop(0,'#7e410b');g.addColorStop(.2,'#f7d57b');g.addColorStop(.5,'#c77b1f');g.addColorStop(.72,'#ffe39a');g.addColorStop(1,'#8b4b10');
-    roundedRect(-w/2,-h/2,w,h,10);ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#6e390d';ctx.lineWidth=2;ctx.stroke();
-    roundedRect(-w*.39,-h*.34,w*.78,h*.68,8);ctx.strokeStyle='rgba(255,245,188,.65)';ctx.lineWidth=2;ctx.stroke();
-    ctx.shadowBlur=0;ctx.strokeStyle='#7b4819';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(-w*.27,0);ctx.bezierCurveTo(-w*.18,-h*.23,-w*.04,-h*.23,0,0);ctx.bezierCurveTo(w*.04,h*.23,w*.18,h*.23,w*.27,0);ctx.stroke();
-    ctx.beginPath();ctx.arc(0,0,h*.14,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#f6d47c';ctx.fill();
-    ctx.restore();
-  }
-
-  function draw() {
-    const rect=canvas.getBoundingClientRect(),W=rect.width,H=rect.height;if(!W||!H)return;
-    const ch=YH.chapters[state.chapter]||YH.chapters[0];ctx.clearRect(0,0,W,H);drawBackground(W,H,ch);
-    // subtle ordering lines for depth
-    state.rings.forEach((r,i)=>drawRing(r,ch,state.selected===i));
-    state.locks.forEach(l=>drawLock(l,ch));
-    const id=nextRingId(),r=state.rings[id];if(r&&!r.removed){const gp=ringGapPoint(r);ctx.save();ctx.globalAlpha=.65;ctx.fillStyle='#f3d77e';ctx.beginPath();ctx.arc(gp.x,gp.y,5+Math.sin(performance.now()/180)*2,0,Math.PI*2);ctx.fill();ctx.restore();}
-  }
-
-  $('#enter').onclick=()=>show('levels'); $('#backHome').onclick=()=>show('home'); $('#backLevels').onclick=()=>{clearInterval(state.timer);show('levels');};
-  $('#reset').onclick=resetLevel; $('#hint').onclick=hint;
-  $('#mode').onclick=()=>{state.mode=state.mode==='drag'?'rotate':'drag';$('#mode').textContent=state.mode==='drag'?'拖环':'转环';$('#mode').classList.toggle('active',state.mode==='rotate');toast(state.mode==='drag'?'拖住玉环向外抽离':'沿玉环圆周拖动以旋转开口');};
-  $('#sound').onclick=()=>{state.sound=!state.sound;$('#sound').textContent=state.sound?'音':'静';if(state.sound){ensureAudio();bgm.volume=.28;bgm.play().catch(()=>{});}else bgm.pause();};
-  $('#next').onclick=()=>startLevel(Math.min(87,state.levelIndex+1)); $('#again').onclick=resetLevel;
-  canvas.addEventListener('pointerdown',onDown,{passive:false});window.addEventListener('pointermove',onMove,{passive:false});window.addEventListener('pointerup',onUp,{passive:false});
-  window.addEventListener('resize',resize);
-  function toast(s){const t=$('#toast');t.textContent=s;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),1700);}
-
-  loadSave(); show('home');
+  canvas.addEventListener('pointerdown',down,{passive:false});canvas.addEventListener('pointermove',move,{passive:false});canvas.addEventListener('pointerup',up,{passive:false});canvas.addEventListener('pointercancel',up,{passive:false});
+  $('#enterGallery').onclick=()=>show('galleryPage');$('#galleryBack').onclick=()=>show('homePage');$('#gameBack').onclick=()=>{clearInterval(state.timer);show('galleryPage');};$('#hintBtn').onclick=hint;$('#resetBtn').onclick=()=>startLevel(state.levelIndex);$('#replayBtn').onclick=()=>startLevel(state.levelIndex);$('#nextBtn').onclick=()=>{const next=Math.min(87,state.levelIndex+1);startLevel(next);};$('#soundBtn').onclick=()=>{state.sound=!state.sound;$('#soundBtn').textContent=state.sound?'音':'静';};$('#musicBtn').onclick=async()=>{state.music=!state.music;if(state.music){try{await bgm.play();}catch(_){}$('#musicBtn').textContent='琴音：开';}else{bgm.pause();$('#musicBtn').textContent='琴音：关';}};$('#resetSave').onclick=()=>{if(confirm('清除通关记录并恢复初始状态？')){localStorage.removeItem(SAVE_KEY);state.completed={};state.unlockedByChapter=Array(8).fill(1);renderGallery();}};
+  loadSave();applyTheme(D.chapters[0]);draw();
 })();

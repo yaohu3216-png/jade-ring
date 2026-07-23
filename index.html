@@ -1,9 +1,79 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>玉环·巧解</title><link rel="stylesheet" href="style.css"></head><body><main>
-<section id="home" class="page active"><div class="hero"><small>YU HUAN · 巧解玉环</small><h1>玉 环</h1><p>循隙抽环，解尽千结。</p><button id="enter">进入藏玉阁</button></div></section>
-<section id="levels" class="page"><header><button id="backHome">‹</button><div><small>第一季 · 八玉华章</small><h2>藏 玉 阁</h2></div><i></i></header><nav id="tabs"></nav><div id="grid"></div></section>
-<section id="game" class="page"><header><button id="backLevels">‹</button><div><small id="chapter"></small><h2 id="title"></h2></div><button id="sound">音</button></header><p id="verse"></p>
-<div class="stats"><div>第几结<b id="no"></b></div><div>动作<b id="moves">0</b></div><div>流光<b id="time">00:00</b></div></div>
-<div class="controls"><button id="hint">点拨</button><button id="reset">复原</button><button id="mode">拖环</button></div>
-<div id="wrap"><canvas id="c"></canvas><div id="toast"></div></div><p class="guide">先转动玉环，使开口对准铜扣空隙；再拖住玉环，沿空隙缓缓抽离。不可硬拽。</p>
-<div id="done" class="modal hidden"><div><b class="seal">解</b><h3>此结已解</h3><p id="result"></p><button id="next">下一玉结</button><button id="again">再解一次</button></div></div></section></main>
-<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio><script src="levels.js"></script><script src="game.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#102f2b">
+  <title>玉环 · 巧解</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <section id="homePage" class="page active">
+    <div class="home-halo"></div>
+    <div class="hero">
+      <p class="eyebrow">YU HUAN · 东方巧解</p>
+      <h1>玉 环</h1>
+      <p class="slogan">循隙抽环，解尽千结。</p>
+      <button id="enterGallery" class="gold-btn">进入藏玉阁</button>
+      <p class="small-note">八玉华章 · 每章第一关均可试玩</p>
+    </div>
+  </section>
+
+  <section id="galleryPage" class="page">
+    <header class="topbar">
+      <button id="galleryBack" class="round-btn" aria-label="返回">‹</button>
+      <div><p class="eyebrow">第一季 · 八玉华章</p><h2>藏 玉 阁</h2></div>
+      <button id="resetSave" class="round-btn mini" aria-label="重置存档">净</button>
+    </header>
+    <p class="gallery-copy">每章首结皆可免费赏玩；其余玉结按章逐步开启。</p>
+    <nav id="chapterTabs" class="chapter-tabs"></nav>
+    <div id="chapterPreview" class="chapter-preview"></div>
+    <div id="levelGrid" class="level-grid"></div>
+  </section>
+
+  <section id="gamePage" class="page">
+    <header class="topbar gamebar">
+      <button id="gameBack" class="round-btn" aria-label="返回选关">‹</button>
+      <div><p id="chapterName" class="eyebrow"></p><h2 id="levelName"></h2></div>
+      <button id="soundBtn" class="round-btn mini" aria-label="声音">音</button>
+    </header>
+
+    <p id="verse" class="verse"></p>
+    <div class="stats">
+      <div><span>第几结</span><b id="levelNo">1/88</b></div>
+      <div><span>动作</span><b id="moveCount">0</b></div>
+      <div><span>流光</span><b id="timeCount">00:00</b></div>
+    </div>
+    <div class="actions">
+      <button id="hintBtn">点拨</button>
+      <button id="resetBtn">复原</button>
+      <button id="musicBtn">琴音：关</button>
+    </div>
+
+    <div class="board-shell">
+      <canvas id="gameCanvas" width="900" height="1100" aria-label="巧解玉环棋盘"></canvas>
+      <div id="toast" class="toast"></div>
+      <div id="gestureTip" class="gesture-tip">
+        <b>操作：</b>拖玉身旋转 · 拖环心移动 · 让缺口沿金扣空隙缓缓穿出
+      </div>
+    </div>
+
+    <p class="guide">不可硬拽。先找最外层的开口玉环，让金扣进入缺口，再沿结构的空隙抽离。</p>
+
+    <div id="completeModal" class="modal hidden">
+      <div class="modal-card">
+        <span class="seal">解</span>
+        <h3>此结已解</h3>
+        <p id="resultText"></p>
+        <button id="nextBtn" class="gold-btn">下一玉结</button>
+        <button id="replayBtn">再解一次</button>
+      </div>
+    </div>
+  </section>
+</main>
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<script src="levels.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
