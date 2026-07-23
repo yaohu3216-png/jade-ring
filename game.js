@@ -118,45 +118,97 @@ function pointerPos(e){
   return{x:e.clientX-rect.left,y:e.clientY-rect.top};
 }
 function pickRing(p){
-  for(let i=rings.length-1;i>=0;i--){
-    const r=rings[i];
+  let best=null;
+  let bestScore=Infinity;
+
+  for(const r of rings){
     if(r.solved || r.alpha<0.15) continue;
-    const cx=r.x*W,cy=r.y*H+r.dy,rr=r.r*Math.min(W,H);
+
+    const cx=r.x*W;
+    const cy=r.y*H+r.dy;
+    const rr=r.r*Math.min(W,H);
     const d=Math.hypot(p.x-cx,p.y-cy);
-    if(d>rr*.48&&d<rr*1.34)return r;
+
+    // 点击圆环内部、边缘或稍微偏出都可以选中。
+    if(d < rr*.28 || d > rr*1.60) continue;
+
+    // 选择触点距离“圆环中线”最近的玉环，避免重叠时选错。
+    const score=Math.abs(d-rr);
+    if(score<bestScore){
+      bestScore=score;
+      best=r;
+    }
   }
-  return null;
+  return best;
 }
 function start(e){
   e.preventDefault();
+
+  // 清理上一次可能残留的拖动状态。
+  activeRing=null;
+
   const p=pointerPos(e);
-  activeRing=pickRing(p);
-  if(!activeRing)return;
+  const picked=pickRing(p);
+  if(!picked) return;
+
+  activeRing=picked;
   activeRing.velocity=0;
-  lastPointerAngle=Math.atan2(p.y-(activeRing.y*H+activeRing.dy),p.x-activeRing.x*W);
+  lastPointerAngle=Math.atan2(
+    p.y-(activeRing.y*H+activeRing.dy),
+    p.x-activeRing.x*W
+  );
   activeRing.pulse=1;
+
+  try{
+    canvas.setPointerCapture(e.pointerId);
+  }catch(_){}
 }
+
 function move(e){
-  if(!activeRing)return;
+  if(!activeRing) return;
   e.preventDefault();
+
+  // 玉环若在拖动途中被解开，立即结束拖动，避免状态卡死。
+  if(activeRing.solved || activeRing.alpha<0.15){
+    activeRing=null;
+    return;
+  }
+
   const p=pointerPos(e);
-  const a=Math.atan2(p.y-(activeRing.y*H+activeRing.dy),p.x-activeRing.x*W);
+  const a=Math.atan2(
+    p.y-(activeRing.y*H+activeRing.dy),
+    p.x-activeRing.x*W
+  );
   const d=norm(a-lastPointerAngle);
+
   activeRing.angle+=d;
   activeRing.velocity=d;
   lastPointerAngle=a;
+
   trySolveLinksFor(activeRing.id);
 }
-function end(){
-  if(!activeRing)return;
-  const id=activeRing.id;
-  activeRing=null;
-  trySolveLinksFor(id);
+
+function end(e){
+  if(activeRing){
+    const id=activeRing.id;
+    activeRing=null;
+    trySolveLinksFor(id);
+  }
+
+  if(e && e.pointerId!==undefined){
+    try{
+      if(canvas.hasPointerCapture(e.pointerId)){
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    }catch(_){}
+  }
 }
-canvas.addEventListener('pointerdown',start);
-window.addEventListener('pointermove',move,{passive:false});
-window.addEventListener('pointerup',end);
-window.addEventListener('pointercancel',end);
+
+canvas.addEventListener('pointerdown',start,{passive:false});
+canvas.addEventListener('pointermove',move,{passive:false});
+canvas.addEventListener('pointerup',end,{passive:false});
+canvas.addEventListener('pointercancel',end,{passive:false});
+canvas.addEventListener('lostpointercapture',()=>{activeRing=null;});
 
 function angleBetween(a,b){
   return Math.atan2((b.y-a.y)*H,(b.x-a.x)*W);
@@ -176,6 +228,12 @@ function trySolveLinksFor(id){
       ra.velocity=rb.velocity=0;
       link.solved=true;
       solvedAny=true;
+
+      // 防止正在拖动的玉环在连接解开后仍保持“被按住”状态。
+      if(activeRing && (activeRing.id===ra.id || activeRing.id===rb.id)){
+        activeRing=null;
+      }
+
       releaseLink(link);
     }
   }
@@ -234,29 +292,105 @@ function drawPetals(){
   }
 }
 function ringRadius(r){return r.r*Math.min(W,H)}
-function edgePoint(r,toward){
-  const cx=r.x*W,cy=r.y*H+r.dy,rr=ringRadius(r);
-  const a=Math.atan2((toward.y-r.y)*H,(toward.x-r.x)*W);
-  return{x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr,a};
+
+function ringTubeWidth(r,rr){
+  return rr*(r.style==='slim'?.22:r.style==='wide'?.34:.28);
 }
+
+function connectionGeometry(a,b){
+  const ax=a.x*W, ay=a.y*H+a.dy;
+  const bx=b.x*W, by=b.y*H+b.dy;
+  const angle=Math.atan2(by-ay,bx-ax);
+  const ra=ringRadius(a), rb=ringRadius(b);
+  const wa=ringTubeWidth(a,ra), wb=ringTubeWidth(b,rb);
+
+  // 金扣中心直接压在玉环的圆管中线上，视觉上会真正“扣住”玉镯。
+  const cuffA={
+    x:ax+Math.cos(angle)*ra,
+    y:ay+Math.sin(angle)*ra,
+    angle:angle+Math.PI/2,
+    width:Math.max(12,wa*.92),
+    height:Math.max(18,wa*1.42)
+  };
+  const cuffB={
+    x:bx-Math.cos(angle)*rb,
+    y:by-Math.sin(angle)*rb,
+    angle:angle+Math.PI/2,
+    width:Math.max(12,wb*.92),
+    height:Math.max(18,wb*1.42)
+  };
+
+  return {angle,cuffA,cuffB};
+}
+
+function goldGradient(x1,y1,x2,y2){
+  const g=ctx.createLinearGradient(x1,y1,x2,y2);
+  g.addColorStop(0,'#8a5d24');
+  g.addColorStop(.22,'#d79b42');
+  g.addColorStop(.46,'#fff0b2');
+  g.addColorStop(.68,'#c47d2d');
+  g.addColorStop(1,'#79501f');
+  return g;
+}
+
+function drawGoldCapsule(x,y,w,h,angle){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+
+  ctx.shadowColor='rgba(83,53,17,.22)';
+  ctx.shadowBlur=7;
+  ctx.shadowOffsetY=3;
+
+  ctx.fillStyle=goldGradient(-w/2,0,w/2,0);
+  roundedRect(-w/2,-h/2,w,h,Math.min(w,h)*.34);
+  ctx.fill();
+
+  ctx.shadowColor='transparent';
+  ctx.strokeStyle='rgba(255,244,190,.82)';
+  ctx.lineWidth=1.2;
+  ctx.stroke();
+
+  ctx.fillStyle='rgba(255,255,255,.36)';
+  roundedRect(-w*.28,-h*.32,w*.12,h*.64,Math.min(w,h)*.12);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function drawLinks(){
   for(const l of links){
-    if(l.solved)continue;
-    const a=getRing(l.a),b=getRing(l.b);
-    if(!a||!b||a.alpha<.1||b.alpha<.1)continue;
-    const pa=edgePoint(a,b),pb=edgePoint(b,a);
-    const mx=(pa.x+pb.x)/2,my=(pa.y+pb.y)/2;
-    const ang=Math.atan2(pb.y-pa.y,pb.x-pa.x);
-    const dist=Math.max(16,Math.hypot(pb.x-pa.x));
-    ctx.save();ctx.translate(mx,my);ctx.rotate(ang);
-    const g=ctx.createLinearGradient(-dist/2,0,dist/2,0);
-    g.addColorStop(0,'#8e642e');g.addColorStop(.25,'#f8dda2');
-    g.addColorStop(.58,'#c58c41');g.addColorStop(1,'#8e642e');
-    ctx.fillStyle=g;roundedRect(-dist/2,-6,dist,12,5);ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=1;ctx.stroke();
-    ctx.restore();
+    if(l.solved) continue;
+
+    const a=getRing(l.a), b=getRing(l.b);
+    if(!a||!b||a.alpha<.1||b.alpha<.1) continue;
+
+    const g=connectionGeometry(a,b);
+    const dx=g.cuffB.x-g.cuffA.x;
+    const dy=g.cuffB.y-g.cuffA.y;
+    const distance=Math.hypot(dx,dy);
+    const midX=(g.cuffA.x+g.cuffB.x)/2;
+    const midY=(g.cuffA.y+g.cuffB.y)/2;
+
+    // 两只玉环较近时加入短桥；较远时只显示分别扣在玉镯上的金箍，
+    // 避免出现悬空的长金条。
+    if(distance<58){
+      const bridgeLength=Math.max(12,distance);
+      drawGoldCapsule(midX,midY,bridgeLength,9,g.angle);
+    }
+
+    // 金箍最后绘制在玉环上层，形成真实包裹玉管的效果。
+    drawGoldCapsule(
+      g.cuffA.x,g.cuffA.y,
+      g.cuffA.width,g.cuffA.height,g.cuffA.angle
+    );
+    drawGoldCapsule(
+      g.cuffB.x,g.cuffB.y,
+      g.cuffB.width,g.cuffB.height,g.cuffB.angle
+    );
   }
 }
+
 function drawRing(r){
   const cx=r.x*W,cy=r.y*H+r.dy,rr=ringRadius(r)*r.scale;
   const gap=r.style==='slim'?0.72:r.style==='wide'?0.92:0.82;
@@ -297,6 +431,10 @@ function drawRing(r){
   ctx.restore();
 }
 function update(){
+  if(activeRing && (activeRing.solved || activeRing.alpha<0.15)){
+    activeRing=null;
+  }
+
   for(const r of rings){
     if(r.pulse>0)r.pulse*=.9;
     if(!r.solved&&r!==activeRing){r.angle+=r.velocity;r.velocity*=.90}
@@ -308,7 +446,7 @@ function update(){
 }
 function render(){
   ctx.clearRect(0,0,W,H);
-  drawBackground();drawPetals();drawLinks();rings.forEach(drawRing);update();
+  drawBackground();drawPetals();rings.forEach(drawRing);drawLinks();update();
   requestAnimationFrame(render);
 }
 
