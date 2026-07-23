@@ -3,23 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#7f5966">
-<title>玉环 · 正式版</title>
+<meta name="theme-color" content="#d7b8c1">
+<title>玉环 · V10 正式版</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="app" id="app">
+<main class="app">
   <header class="topbar">
     <button id="restart" class="pill">重置</button>
-    <div class="brand">
-      <b>玉 环</b>
-      <span>玉环轻转，万事圆满</span>
-    </div>
+    <div class="brand"><b>玉 环</b><span>玉环轻转，万事圆满</span></div>
     <div class="audio-controls">
       <button id="sound" class="pill mini">叮当：开</button>
       <button id="music" class="pill mini">音乐：开</button>
     </div>
   </header>
+
+  <nav class="modebar" aria-label="游戏模式">
+    <button id="chapterMode" class="mode active">闯关</button>
+    <button id="dailyMode" class="mode">今日玉结</button>
+    <button id="share" class="mode">分享挑战</button>
+  </nav>
 
   <section id="stage" class="stage" aria-label="玉环解谜游戏">
     <canvas id="game"></canvas>
@@ -27,10 +30,19 @@
       <div id="levelName" class="level-name"></div>
       <div id="levelVerse" class="level-verse"></div>
     </div>
-    <div id="hint" class="hint">转动玉环，让缺口穿过金扣</div>
+    <div class="stats">
+      <span>步数 <b id="moves">0</b></span>
+      <span>用时 <b id="timer">00:00</b></span>
+      <span>进度 <b id="progress">1/12</b></span>
+    </div>
+    <div id="hint" class="hint">两只玉环缺口相对，金扣方可解开</div>
+    <div id="toast" class="toast"></div>
   </section>
 
-  <footer><button id="next" class="next hidden">下一关</button></footer>
+  <footer>
+    <button id="prev" class="next ghost">上一关</button>
+    <button id="next" class="next hidden">下一关</button>
+  </footer>
   <audio id="bgm" src="assets/bgm.mp3" loop preload="auto"></audio>
 </main>
 <script src="game.js"></script>
