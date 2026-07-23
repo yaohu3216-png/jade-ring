@@ -1,72 +1,9 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#162c28">
-  <title>玉环 · 八玉华章</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="app" class="app">
-    <section id="homePage" class="page home-page active">
-      <div class="home-cloud cloud-a"></div><div class="home-cloud cloud-b"></div>
-      <div class="brand-seal">玉</div>
-      <p class="eyebrow">YU HUAN · 东方解结</p>
-      <h1>玉环</h1>
-      <p class="slogan">一环一玉，一结一境</p>
-      <div class="jade-disc" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <button id="enterLevels" class="primary-btn">入藏玉阁</button>
-      <button id="continueBtn" class="ghost-btn">续解前缘</button>
-      <p class="home-note">八玉 · 八十八结</p>
-    </section>
-
-    <section id="levelsPage" class="page levels-page">
-      <header class="page-head">
-        <button class="icon-btn" data-go="homePage" aria-label="返回">‹</button>
-        <div><p class="eyebrow">藏 玉 阁</p><h2>八玉华章</h2></div>
-        <div class="progress-medal"><span id="progressNum">1</span><small>/88</small></div>
-      </header>
-      <div id="chapterTabs" class="chapter-tabs"></div>
-      <div id="chapterIntro" class="chapter-intro"></div>
-      <div id="levelGrid" class="level-grid"></div>
-    </section>
-
-    <section id="gamePage" class="page game-page">
-      <header class="game-head">
-        <button class="icon-btn" id="backToLevels" aria-label="关卡列表">‹</button>
-        <div class="game-title">
-          <p id="chapterName" class="eyebrow"></p>
-          <h2 id="levelName">玉结</h2>
-        </div>
-        <button class="icon-btn" id="soundBtn" aria-label="声音">音</button>
-      </header>
-
-      <div class="verse" id="verse">玉不琢，不成器。</div>
-      <div class="hud">
-        <div><span>第几结</span><strong id="levelText">1 / 88</strong></div>
-        <div><span>转环</span><strong id="movesText">0</strong></div>
-        <div><span>流光</span><strong id="timeText">00:00</strong></div>
-      </div>
-      <div class="actions">
-        <button id="hintBtn">点拨</button><button id="resetBtn">复原</button><button id="musicBtn">琴音：关</button>
-      </div>
-
-      <section class="stage-wrap">
-        <canvas id="game" aria-label="玉环解谜游戏"></canvas>
-        <div id="toast" class="toast"></div>
-        <div id="complete" class="complete hidden">
-          <div class="seal">解</div>
-          <p class="eyebrow">玉 扣 已 开</p>
-          <h2>此结圆满</h2>
-          <p id="resultText"></p>
-          <div class="complete-actions"><button id="replayBtn">再解一次</button><button id="nextBtn">下一玉结</button></div>
-        </div>
-      </section>
-      <p class="guide">转动玉环，使相扣两环的缺口同时抵达金扣。扣落之后，方可继续解下一重。</p>
-    </section>
-  </div>
-  <audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
-  <script src="game.js"></script>
-</body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>玉环·巧解</title><link rel="stylesheet" href="style.css"></head><body><main>
+<section id="home" class="page active"><div class="hero"><small>YU HUAN · 巧解玉环</small><h1>玉 环</h1><p>循隙抽环，解尽千结。</p><button id="enter">进入藏玉阁</button></div></section>
+<section id="levels" class="page"><header><button id="backHome">‹</button><div><small>第一季 · 八玉华章</small><h2>藏 玉 阁</h2></div><i></i></header><nav id="tabs"></nav><div id="grid"></div></section>
+<section id="game" class="page"><header><button id="backLevels">‹</button><div><small id="chapter"></small><h2 id="title"></h2></div><button id="sound">音</button></header><p id="verse"></p>
+<div class="stats"><div>第几结<b id="no"></b></div><div>动作<b id="moves">0</b></div><div>流光<b id="time">00:00</b></div></div>
+<div class="controls"><button id="hint">点拨</button><button id="reset">复原</button><button id="mode">拖环</button></div>
+<div id="wrap"><canvas id="c"></canvas><div id="toast"></div></div><p class="guide">先转动玉环，使开口对准铜扣空隙；再拖住玉环，沿空隙缓缓抽离。不可硬拽。</p>
+<div id="done" class="modal hidden"><div><b class="seal">解</b><h3>此结已解</h3><p id="result"></p><button id="next">下一玉结</button><button id="again">再解一次</button></div></div></section></main>
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio><script src="levels.js"></script><script src="game.js"></script></body></html>
