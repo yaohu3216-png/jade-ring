@@ -1,453 +1,218 @@
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const stage=document.getElementById('stage');
+const restartBtn=document.getElementById('restart');
+const nextBtn=document.getElementById('next');
+const soundBtn=document.getElementById('sound');
+const levelName=document.getElementById('levelName');
+const hint=document.getElementById('hint');
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const restartBtn = document.getElementById('restartBtn');
-const nextBtn = document.getElementById('nextBtn');
-const levelText = document.getElementById('levelText');
-const message = document.getElementById('message');
-const stageWrap = document.getElementById('stageWrap');
+let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+let levelIndex=0,rings=[],clasps=[],particles=[];
+let selected=null,lastAngle=0,soundOn=true,audioCtx=null;
 
-let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
-let rings=[],links=[],petals=[];
-let activeRing=null,lastPointerAngle=0;
-let currentLevel=0,completed=false;
-
-const palette={
-  pink:['#fff4f8','#f3aec7','#cf6e98'],
-  rose:['#fff0f5','#e79bb8','#b8557f'],
-  amethyst:['#fff2ff','#caa3e4','#8150ac'],
-  lilac:['#fbf2ff','#b98bd9','#714798'],
-  imperial:['#ecfff1','#70c88c','#087a43'],
-  jade:['#effff4','#99d6aa','#4b9a68'],
-  ice:['#ffffff','#dff4f7','#9bc7ce'],
-  white:['#ffffff','#e8f1ed','#b8cdc1']
+const THEMES={
+  pink:{bg:['#fff8fb','#f4dfe8','#e7c3d2'],ring:['#fff5f8','#f2a8c1','#c75f89'],accent:'#b95e82',particle:'rgba(225,122,160,.55)'},
+  purple:{bg:['#fffaff','#eee1f7','#d8c2e8'],ring:['#fff6ff','#c59cde','#744895'],accent:'#7d4e9e',particle:'rgba(150,102,190,.50)'},
+  green:{bg:['#f8fff9','#dfefe2','#bad8c2'],ring:['#ecfff2','#62bd7c','#08713b'],accent:'#176c3e',particle:'rgba(67,147,91,.45)'},
+  white:{bg:['#ffffff','#edf6f4','#d8e8e5'],ring:['#ffffff','#d9eeee','#9abfc0'],accent:'#699799',particle:'rgba(175,213,213,.55)'}
 };
 
-const levels=[
-  {
-    name:'第一关 · 桃粉',
-    theme:'theme-spring',
-    rings:[
-      {id:'A',x:.50,y:.22,r:.082,color:'pink',angle:2.2,style:'round'},
-      {id:'B',x:.35,y:.44,r:.098,color:'rose',angle:.3,style:'round'},
-      {id:'C',x:.65,y:.44,r:.098,color:'white',angle:3.7,style:'slim'},
-      {id:'D',x:.50,y:.68,r:.105,color:'pink',angle:5.1,style:'wide'}
-    ],
-    links:[['A','B'],['A','C'],['B','D'],['C','D']]
-  },
-  {
-    name:'第二关 · 紫水晶',
-    theme:'theme-amethyst',
-    rings:[
-      {id:'A',x:.50,y:.16,r:.074,color:'amethyst',angle:1.8,style:'faceted'},
-      {id:'B',x:.31,y:.34,r:.086,color:'lilac',angle:.2,style:'round'},
-      {id:'C',x:.50,y:.36,r:.09,color:'ice',angle:4.2,style:'slim'},
-      {id:'D',x:.69,y:.34,r:.086,color:'amethyst',angle:3.2,style:'faceted'},
-      {id:'E',x:.38,y:.59,r:.092,color:'lilac',angle:5.2,style:'round'},
-      {id:'F',x:.62,y:.59,r:.092,color:'amethyst',angle:1.2,style:'wide'},
-      {id:'G',x:.50,y:.79,r:.081,color:'ice',angle:4.7,style:'slim'}
-    ],
-    links:[['A','B'],['A','C'],['A','D'],['B','E'],['C','E'],['C','F'],['D','F'],['E','G'],['F','G']]
-  },
-  {
-    name:'第三关 · 帝王绿',
-    theme:'theme-imperial',
-    rings:[
-      {id:'A',x:.36,y:.22,r:.085,color:'imperial',angle:2.5,style:'wide'},
-      {id:'B',x:.64,y:.22,r:.085,color:'jade',angle:.5,style:'round'},
-      {id:'C',x:.28,y:.47,r:.092,color:'white',angle:4.8,style:'slim'},
-      {id:'D',x:.50,y:.45,r:.105,color:'imperial',angle:1.3,style:'faceted'},
-      {id:'E',x:.72,y:.47,r:.092,color:'jade',angle:3.4,style:'round'},
-      {id:'F',x:.38,y:.72,r:.094,color:'imperial',angle:5.5,style:'wide'},
-      {id:'G',x:.62,y:.72,r:.094,color:'white',angle:2.1,style:'slim'}
-    ],
-    links:[['A','C'],['A','D'],['B','D'],['B','E'],['C','F'],['D','F'],['D','G'],['E','G']]
-  },
-  {
-    name:'第四关 · 冰玉',
-    theme:'theme-ice',
-    rings:[
-      {id:'A',x:.50,y:.17,r:.077,color:'ice',angle:2.8,style:'slim'},
-      {id:'B',x:.32,y:.33,r:.083,color:'white',angle:.4,style:'round'},
-      {id:'C',x:.68,y:.33,r:.083,color:'ice',angle:4.4,style:'wide'},
-      {id:'D',x:.26,y:.56,r:.09,color:'pink',angle:1.2,style:'round'},
-      {id:'E',x:.50,y:.52,r:.096,color:'amethyst',angle:5.1,style:'faceted'},
-      {id:'F',x:.74,y:.56,r:.09,color:'imperial',angle:2.4,style:'round'},
-      {id:'G',x:.39,y:.77,r:.086,color:'ice',angle:3.9,style:'slim'},
-      {id:'H',x:.61,y:.77,r:.086,color:'white',angle:.9,style:'wide'}
-    ],
-    links:[['A','B'],['A','C'],['B','D'],['B','E'],['C','E'],['C','F'],['D','G'],['E','G'],['E','H'],['F','H']]
-  }
+const LEVELS=[
+ {name:'第一关 · 桃粉玉',theme:'pink',
+  rings:[
+   {id:'A',x:.50,y:.22,r:.105,a:2.2},
+   {id:'B',x:.34,y:.45,r:.11,a:.4},
+   {id:'C',x:.66,y:.45,r:.11,a:3.5},
+   {id:'D',x:.50,y:.69,r:.115,a:5.1}],
+  clasps:[['A','B'],['A','C'],['B','D'],['C','D']]},
+ {name:'第二关 · 紫水晶',theme:'purple',
+  rings:[
+   {id:'A',x:.50,y:.16,r:.09,a:1.9},{id:'B',x:.30,y:.35,r:.10,a:.3},
+   {id:'C',x:.50,y:.37,r:.105,a:4.5},{id:'D',x:.70,y:.35,r:.10,a:3.1},
+   {id:'E',x:.37,y:.62,r:.105,a:5.4},{id:'F',x:.63,y:.62,r:.105,a:1.2},
+   {id:'G',x:.50,y:.82,r:.09,a:4.8}],
+  clasps:[['A','B'],['A','C'],['A','D'],['B','E'],['C','E'],['C','F'],['D','F'],['E','G'],['F','G']]},
+ {name:'第三关 · 帝王绿',theme:'green',
+  rings:[
+   {id:'A',x:.35,y:.20,r:.10,a:2.6},{id:'B',x:.65,y:.20,r:.10,a:.5},
+   {id:'C',x:.25,y:.47,r:.10,a:4.7},{id:'D',x:.50,y:.44,r:.12,a:1.1},
+   {id:'E',x:.75,y:.47,r:.10,a:3.5},{id:'F',x:.37,y:.72,r:.105,a:5.5},
+   {id:'G',x:.63,y:.72,r:.105,a:2.0}],
+  clasps:[['A','C'],['A','D'],['B','D'],['B','E'],['C','F'],['D','F'],['D','G'],['E','G']]},
+ {name:'第四关 · 冰种白玉',theme:'white',
+  rings:[
+   {id:'A',x:.50,y:.16,r:.09,a:2.8},{id:'B',x:.30,y:.33,r:.095,a:.5},
+   {id:'C',x:.70,y:.33,r:.095,a:4.2},{id:'D',x:.23,y:.58,r:.10,a:1.2},
+   {id:'E',x:.50,y:.52,r:.115,a:5.0},{id:'F',x:.77,y:.58,r:.10,a:2.5},
+   {id:'G',x:.38,y:.79,r:.095,a:3.8},{id:'H',x:.62,y:.79,r:.095,a:.9}],
+  clasps:[['A','B'],['A','C'],['B','D'],['B','E'],['C','E'],['C','F'],['D','G'],['E','G'],['E','H'],['F','H']]}
 ];
 
 function resize(){
-  const r=canvas.getBoundingClientRect();
-  W=r.width;H=r.height;
-  canvas.width=Math.round(W*DPR);
-  canvas.height=Math.round(H*DPR);
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  petals=Array.from({length:20},()=>({
-    x:Math.random()*W,y:Math.random()*H,s:2+Math.random()*4,
-    vx:-.12+Math.random()*.24,vy:.18+Math.random()*.32,
-    a:Math.random()*Math.PI*2,va:-.02+Math.random()*.04
-  }));
+ const r=canvas.getBoundingClientRect();W=r.width;H=r.height;
+ canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+ ctx.setTransform(DPR,0,0,DPR,0,0);
 }
-window.addEventListener('resize',resize);
+addEventListener('resize',resize);
 
 function loadLevel(i){
-  currentLevel=i%levels.length;
-  completed=false;
-  nextBtn.classList.add('hidden');
-  const level=levels[currentLevel];
-  message.textContent='旋转玉环，让相连开口彼此相对';
-  levelText.textContent=level.name;
-  stageWrap.className='stageWrap '+level.theme;
-  rings=level.rings.map(r=>({
-    ...r,velocity:0,solved:false,falling:false,dy:0,alpha:1,scale:1,pulse:0
-  }));
-  links=level.links.map(([a,b])=>({a,b,solved:false}));
+ levelIndex=i%LEVELS.length;const L=LEVELS[levelIndex],t=THEMES[L.theme];
+ levelName.textContent=L.name;stage.style.background=`radial-gradient(circle at 50% 35%,${t.bg[0]},${t.bg[1]} 58%,${t.bg[2]})`;
+ rings=L.rings.map(r=>({...r,angle:r.a,velocity:0,fall:0,alpha:1,removed:false}));
+ clasps=L.clasps.map((c,n)=>({id:n,a:c[0],b:c[1],open:false,flash:0}));
+ selected=null;nextBtn.classList.add('hidden');hint.textContent='旋转玉镯，让缺口经过金扣即可脱开';
+ particles=[];
 }
-function getRing(id){return rings.find(r=>r.id===id)}
-function norm(a){
-  while(a>Math.PI)a-=Math.PI*2;
-  while(a<-Math.PI)a+=Math.PI*2;
-  return a;
+function ring(id){return rings.find(r=>r.id===id)}
+function norm(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a}
+function pos(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function radius(r){return r.r*Math.min(W,H)}
+function pick(p){
+ let best=null,score=1e9;
+ for(const r of rings){
+  if(r.removed||r.alpha<.15)continue;
+  const d=Math.hypot(p.x-r.x*W,p.y-(r.y*H+r.fall)),rr=radius(r);
+  if(d<rr*.35||d>rr*1.55)continue;
+  const s=Math.abs(d-rr);
+  if(s<score){score=s;best=r}
+ }
+ return best;
 }
-function pointerPos(e){
-  const rect=canvas.getBoundingClientRect();
-  return{x:e.clientX-rect.left,y:e.clientY-rect.top};
+function down(e){
+ e.preventDefault();selected=pick(pos(e));if(!selected)return;
+ selected.velocity=0;const p=pos(e);lastAngle=Math.atan2(p.y-(selected.y*H+selected.fall),p.x-selected.x*W);
+ try{canvas.setPointerCapture(e.pointerId)}catch(_){}
 }
-function pickRing(p){
-  let best=null;
-  let bestScore=Infinity;
-
-  for(const r of rings){
-    if(r.solved || r.alpha<0.15) continue;
-
-    const cx=r.x*W;
-    const cy=r.y*H+r.dy;
-    const rr=r.r*Math.min(W,H);
-    const d=Math.hypot(p.x-cx,p.y-cy);
-
-    // 点击圆环内部、边缘或稍微偏出都可以选中。
-    if(d < rr*.28 || d > rr*1.60) continue;
-
-    // 选择触点距离“圆环中线”最近的玉环，避免重叠时选错。
-    const score=Math.abs(d-rr);
-    if(score<bestScore){
-      bestScore=score;
-      best=r;
-    }
-  }
-  return best;
-}
-function start(e){
-  e.preventDefault();
-
-  // 清理上一次可能残留的拖动状态。
-  activeRing=null;
-
-  const p=pointerPos(e);
-  const picked=pickRing(p);
-  if(!picked) return;
-
-  activeRing=picked;
-  activeRing.velocity=0;
-  lastPointerAngle=Math.atan2(
-    p.y-(activeRing.y*H+activeRing.dy),
-    p.x-activeRing.x*W
-  );
-  activeRing.pulse=1;
-
-  try{
-    canvas.setPointerCapture(e.pointerId);
-  }catch(_){}
-}
-
 function move(e){
-  if(!activeRing) return;
-  e.preventDefault();
-
-  // 玉环若在拖动途中被解开，立即结束拖动，避免状态卡死。
-  if(activeRing.solved || activeRing.alpha<0.15){
-    activeRing=null;
-    return;
-  }
-
-  const p=pointerPos(e);
-  const a=Math.atan2(
-    p.y-(activeRing.y*H+activeRing.dy),
-    p.x-activeRing.x*W
-  );
-  const d=norm(a-lastPointerAngle);
-
-  activeRing.angle+=d;
-  activeRing.velocity=d;
-  lastPointerAngle=a;
-
-  trySolveLinksFor(activeRing.id);
+ if(!selected)return;e.preventDefault();
+ const p=pos(e),a=Math.atan2(p.y-(selected.y*H+selected.fall),p.x-selected.x*W);
+ const d=norm(a-lastAngle);selected.angle+=d;selected.velocity=d;lastAngle=a;
+ testClasps(selected.id);
 }
-
-function end(e){
-  if(activeRing){
-    const id=activeRing.id;
-    activeRing=null;
-    trySolveLinksFor(id);
-  }
-
-  if(e && e.pointerId!==undefined){
-    try{
-      if(canvas.hasPointerCapture(e.pointerId)){
-        canvas.releasePointerCapture(e.pointerId);
-      }
-    }catch(_){}
-  }
+function up(e){
+ if(selected){testClasps(selected.id);selected=null}
+ try{if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId)}catch(_){}
 }
-
-canvas.addEventListener('pointerdown',start,{passive:false});
+canvas.addEventListener('pointerdown',down,{passive:false});
 canvas.addEventListener('pointermove',move,{passive:false});
-canvas.addEventListener('pointerup',end,{passive:false});
-canvas.addEventListener('pointercancel',end,{passive:false});
-canvas.addEventListener('lostpointercapture',()=>{activeRing=null;});
+canvas.addEventListener('pointerup',up,{passive:false});
+canvas.addEventListener('pointercancel',up,{passive:false});
 
-function angleBetween(a,b){
-  return Math.atan2((b.y-a.y)*H,(b.x-a.x)*W);
-}
-function gapFaces(r,angle){
-  return Math.abs(norm(r.angle-angle))<0.28;
-}
-function trySolveLinksFor(id){
-  const candidates=links.filter(l=>!l.solved&&(l.a===id||l.b===id));
-  let solvedAny=false;
-  for(const link of candidates){
-    const ra=getRing(link.a),rb=getRing(link.b);
-    if(!ra||!rb||ra.solved||rb.solved)continue;
-    const ab=angleBetween(ra,rb),ba=norm(ab+Math.PI);
-    if(gapFaces(ra,ab)&&gapFaces(rb,ba)){
-      ra.angle=ab;rb.angle=ba;
-      ra.velocity=rb.velocity=0;
-      link.solved=true;
-      solvedAny=true;
-
-      // 防止正在拖动的玉环在连接解开后仍保持“被按住”状态。
-      if(activeRing && (activeRing.id===ra.id || activeRing.id===rb.id)){
-        activeRing=null;
-      }
-
-      releaseLink(link);
-    }
+function direction(a,b){return Math.atan2((b.y-a.y)*H,(b.x-a.x)*W)}
+function gapAligned(r,dir){return Math.abs(norm(r.angle-dir))<.25}
+function testClasps(id){
+ for(const c of clasps){
+  if(c.open||!(c.a===id||c.b===id))continue;
+  const A=ring(c.a),B=ring(c.b);if(A.removed||B.removed)continue;
+  const ab=direction(A,B),ba=norm(ab+Math.PI);
+  // 参考玩法：两侧开口同时穿过金扣。
+  if(gapAligned(A,ab)&&gapAligned(B,ba)){
+   A.angle=ab;B.angle=ba;A.velocity=B.velocity=0;c.open=true;c.flash=1;
+   playUnlock();spawnSpark((A.x+B.x)*W/2,(A.y+B.y)*H/2);
   }
-  if(!solvedAny && activeRing) message.textContent='继续调整，让金扣两侧开口正对';
+ }
+ updateRemoval();
 }
-function releaseLink(link){
-  message.textContent='金扣已解开';
-  setTimeout(()=>{
-    const ra=getRing(link.a),rb=getRing(link.b);
-    if(ra && !links.some(l=>!l.solved&&(l.a===ra.id||l.b===ra.id))) solveRing(ra);
-    if(rb && !links.some(l=>!l.solved&&(l.a===rb.id||l.b===rb.id))) solveRing(rb);
-    checkComplete();
-  },140);
+function updateRemoval(){
+ for(const r of rings){
+  if(r.removed)continue;
+  const left=clasps.some(c=>!c.open&&(c.a===r.id||c.b===r.id));
+  if(!left){r.removed=true;r.velocity=0;setTimeout(()=>playDrop(),80)}
+ }
+ if(clasps.every(c=>c.open)){
+  hint.textContent='此结已解';nextBtn.classList.remove('hidden');
+  for(let i=0;i<32;i++)spawnSpark(W/2,H*.48,true);
+ }else hint.textContent='金扣已解开，继续旋转剩余玉镯';
 }
-function solveRing(r){
-  if(r.solved)return;
-  r.solved=true;r.falling=true;
+function audio(){
+ if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ if(audioCtx.state==='suspended')audioCtx.resume();
+ return audioCtx;
 }
-function checkComplete(){
-  if(links.every(l=>l.solved)){
-    completed=true;
-    rings.forEach(solveRing);
-    message.textContent='此结已解';
-    nextBtn.classList.remove('hidden');
-    burstPetals();
-  }
+function tone(freq,dur,type='sine',gain=.04,delay=0){
+ if(!soundOn)return;const ac=audio(),o=ac.createOscillator(),g=ac.createGain();
+ o.type=type;o.frequency.setValueAtTime(freq,ac.currentTime+delay);
+ g.gain.setValueAtTime(0,ac.currentTime+delay);
+ g.gain.linearRampToValueAtTime(gain,ac.currentTime+delay+.01);
+ g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+delay+dur);
+ o.connect(g).connect(ac.destination);o.start(ac.currentTime+delay);o.stop(ac.currentTime+delay+dur);
 }
-restartBtn.onclick=()=>loadLevel(currentLevel);
-nextBtn.onclick=()=>loadLevel(currentLevel+1);
-
-function burstPetals(){
-  for(let i=0;i<34;i++)petals.push({
-    x:W/2+(Math.random()-.5)*90,y:H*.52,s:2+Math.random()*5,
-    vx:(Math.random()-.5)*2,vy:-1.2-Math.random()*1.5,
-    a:Math.random()*Math.PI*2,va:-.06+Math.random()*.12
-  });
+function playUnlock(){tone(660,.22,'sine',.045);tone(990,.28,'sine',.025,.07)}
+function playDrop(){tone(190,.18,'triangle',.025)}
+function spawnSpark(x,y,burst=false){
+ const t=THEMES[LEVELS[levelIndex].theme];
+ const n=burst?1:8;
+ for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*(burst?4:2),vy:-.5-Math.random()*(burst?3:1.5),life:1,s:2+Math.random()*4,color:t.particle});
 }
-function roundedRect(x,y,w,h,r){
-  ctx.beginPath();ctx.roundRect(x,y,w,h,r);
+function drawBg(){
+ const t=THEMES[LEVELS[levelIndex].theme];
+ ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle=t.accent;ctx.lineWidth=1;
+ for(let i=0;i<7;i++){const y=H*(.14+i*.12);ctx.beginPath();ctx.moveTo(-20,y);ctx.bezierCurveTo(W*.3,y-15,W*.7,y+15,W+20,y);ctx.stroke()}
+ ctx.restore();
 }
-function drawBackground(){
-  const g=ctx.createRadialGradient(W*.5,H*.36,20,W*.5,H*.5,Math.max(W,H)*.8);
-  g.addColorStop(0,'rgba(255,255,255,.58)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+function tubeGradient(r,rr){
+ const t=THEMES[LEVELS[levelIndex].theme];
+ const g=ctx.createLinearGradient(-rr,-rr,rr,rr);
+ g.addColorStop(0,t.ring[0]);g.addColorStop(.28,t.ring[1]);g.addColorStop(.57,t.ring[2]);g.addColorStop(.78,t.ring[1]);g.addColorStop(1,t.ring[0]);return g;
 }
-function drawPetals(){
-  const hue=currentLevel===1?'rgba(189,150,224,.52)':currentLevel===2?'rgba(130,201,145,.46)':'rgba(237,158,185,.64)';
-  for(const p of petals){
-    p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.vy+=completed?.006:.001;
-    if(p.y>H+20||p.x<-30||p.x>W+30){
-      p.x=Math.random()*W;p.y=-20;p.vx=-.12+Math.random()*.24;p.vy=.18+Math.random()*.32;
-    }
-    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);
-    ctx.fillStyle=hue;ctx.beginPath();ctx.ellipse(0,0,p.s,p.s*1.7,0,0,Math.PI*2);ctx.fill();ctx.restore();
-  }
-}
-function ringRadius(r){return r.r*Math.min(W,H)}
-
-function ringTubeWidth(r,rr){
-  return rr*(r.style==='slim'?.22:r.style==='wide'?.34:.28);
-}
-
-function connectionGeometry(a,b){
-  const ax=a.x*W, ay=a.y*H+a.dy;
-  const bx=b.x*W, by=b.y*H+b.dy;
-  const angle=Math.atan2(by-ay,bx-ax);
-  const ra=ringRadius(a), rb=ringRadius(b);
-  const wa=ringTubeWidth(a,ra), wb=ringTubeWidth(b,rb);
-
-  // 金扣中心直接压在玉环的圆管中线上，视觉上会真正“扣住”玉镯。
-  const cuffA={
-    x:ax+Math.cos(angle)*ra,
-    y:ay+Math.sin(angle)*ra,
-    angle:angle+Math.PI/2,
-    width:Math.max(12,wa*.92),
-    height:Math.max(18,wa*1.42)
-  };
-  const cuffB={
-    x:bx-Math.cos(angle)*rb,
-    y:by-Math.sin(angle)*rb,
-    angle:angle+Math.PI/2,
-    width:Math.max(12,wb*.92),
-    height:Math.max(18,wb*1.42)
-  };
-
-  return {angle,cuffA,cuffB};
-}
-
-function goldGradient(x1,y1,x2,y2){
-  const g=ctx.createLinearGradient(x1,y1,x2,y2);
-  g.addColorStop(0,'#8a5d24');
-  g.addColorStop(.22,'#d79b42');
-  g.addColorStop(.46,'#fff0b2');
-  g.addColorStop(.68,'#c47d2d');
-  g.addColorStop(1,'#79501f');
-  return g;
-}
-
-function drawGoldCapsule(x,y,w,h,angle){
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.rotate(angle);
-
-  ctx.shadowColor='rgba(83,53,17,.22)';
-  ctx.shadowBlur=7;
-  ctx.shadowOffsetY=3;
-
-  ctx.fillStyle=goldGradient(-w/2,0,w/2,0);
-  roundedRect(-w/2,-h/2,w,h,Math.min(w,h)*.34);
-  ctx.fill();
-
-  ctx.shadowColor='transparent';
-  ctx.strokeStyle='rgba(255,244,190,.82)';
-  ctx.lineWidth=1.2;
-  ctx.stroke();
-
-  ctx.fillStyle='rgba(255,255,255,.36)';
-  roundedRect(-w*.28,-h*.32,w*.12,h*.64,Math.min(w,h)*.12);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawLinks(){
-  for(const l of links){
-    if(l.solved) continue;
-
-    const a=getRing(l.a), b=getRing(l.b);
-    if(!a||!b||a.alpha<.1||b.alpha<.1) continue;
-
-    const g=connectionGeometry(a,b);
-    const dx=g.cuffB.x-g.cuffA.x;
-    const dy=g.cuffB.y-g.cuffA.y;
-    const distance=Math.hypot(dx,dy);
-    const midX=(g.cuffA.x+g.cuffB.x)/2;
-    const midY=(g.cuffA.y+g.cuffB.y)/2;
-
-    // 两只玉环较近时加入短桥；较远时只显示分别扣在玉镯上的金箍，
-    // 避免出现悬空的长金条。
-    if(distance<58){
-      const bridgeLength=Math.max(12,distance);
-      drawGoldCapsule(midX,midY,bridgeLength,9,g.angle);
-    }
-
-    // 金箍最后绘制在玉环上层，形成真实包裹玉管的效果。
-    drawGoldCapsule(
-      g.cuffA.x,g.cuffA.y,
-      g.cuffA.width,g.cuffA.height,g.cuffA.angle
-    );
-    drawGoldCapsule(
-      g.cuffB.x,g.cuffB.y,
-      g.cuffB.width,g.cuffB.height,g.cuffB.angle
-    );
-  }
-}
-
 function drawRing(r){
-  const cx=r.x*W,cy=r.y*H+r.dy,rr=ringRadius(r)*r.scale;
-  const gap=r.style==='slim'?0.72:r.style==='wide'?0.92:0.82;
-  const width=rr*(r.style==='slim'?.22:r.style==='wide'?.34:.28);
-  const start=r.angle+gap/2,end=r.angle+Math.PI*2-gap/2;
-  const colors=palette[r.color];
-
-  ctx.save();ctx.globalAlpha=r.alpha;ctx.translate(cx,cy);ctx.lineCap='round';
-
-  const grad=ctx.createLinearGradient(-rr,-rr,rr,rr);
-  grad.addColorStop(0,colors[0]);grad.addColorStop(.30,colors[1]);
-  grad.addColorStop(.68,colors[2]);grad.addColorStop(1,colors[0]);
-
-  ctx.shadowColor='rgba(52,83,63,.18)';ctx.shadowBlur=11;ctx.shadowOffsetY=8;
-  ctx.strokeStyle=grad;ctx.lineWidth=width;
-  ctx.beginPath();ctx.arc(0,0,rr,start,end);ctx.stroke();
-  ctx.shadowColor='transparent';
-
-  if(r.style==='faceted'){
-    ctx.save();ctx.globalAlpha=.34;ctx.strokeStyle='#fff';ctx.lineWidth=2;
-    for(let i=0;i<10;i++){
-      const a=start+(end-start)*(i/10);
-      ctx.beginPath();ctx.arc(0,0,rr,a,a+.16);ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  ctx.strokeStyle='rgba(255,255,255,.78)';ctx.lineWidth=width*.14;
-  ctx.beginPath();ctx.arc(-rr*.04,-rr*.05,rr,start+.16,end-1.35);ctx.stroke();
-
-  ctx.strokeStyle='rgba(32,72,48,.14)';ctx.lineWidth=width*.09;
-  ctx.beginPath();ctx.arc(rr*.03,rr*.03,rr,start+2.05,end-.16);ctx.stroke();
-
-  if(r.pulse>0){
-    ctx.globalAlpha*=r.pulse*.35;ctx.strokeStyle='#fff';ctx.lineWidth=3;
-    ctx.beginPath();ctx.arc(0,0,rr*1.22,0,Math.PI*2);ctx.stroke();
-  }
-  ctx.restore();
+ const rr=radius(r),cx=r.x*W,cy=r.y*H+r.fall,gap=.84,w=rr*.29;
+ ctx.save();ctx.globalAlpha=r.alpha;ctx.translate(cx,cy);ctx.lineCap='round';
+ ctx.shadowColor='rgba(60,45,55,.19)';ctx.shadowBlur=14;ctx.shadowOffsetY=8;
+ ctx.strokeStyle=tubeGradient(r,rr);ctx.lineWidth=w;
+ ctx.beginPath();ctx.arc(0,0,rr,r.angle+gap/2,r.angle+Math.PI*2-gap/2);ctx.stroke();
+ ctx.shadowColor='transparent';
+ ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=w*.13;
+ ctx.beginPath();ctx.arc(-rr*.04,-rr*.06,rr,r.angle+gap/2+.18,r.angle+Math.PI*1.18);ctx.stroke();
+ // 玉纹
+ ctx.globalAlpha*=.22;ctx.strokeStyle='#fff';ctx.lineWidth=1.2;
+ for(let i=0;i<5;i++){const a=r.angle+.7+i*.9;ctx.beginPath();ctx.arc(0,0,rr,a,a+.22);ctx.stroke()}
+ ctx.restore();
+}
+function claspGeometry(c){
+ const A=ring(c.a),B=ring(c.b),a=direction(A,B);
+ const ra=radius(A),rb=radius(B),wa=ra*.29,wb=rb*.29;
+ return{
+  angle:a,
+  ax:A.x*W+Math.cos(a)*ra,ay:A.y*H+A.fall+Math.sin(a)*ra,
+  bx:B.x*W-Math.cos(a)*rb,by:B.y*H+B.fall-Math.sin(a)*rb,
+  wa,wb
+ };
+}
+function capsule(x,y,w,h,a,alpha=1){
+ ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.rotate(a);
+ const g=ctx.createLinearGradient(-w/2,0,w/2,0);
+ g.addColorStop(0,'#83521d');g.addColorStop(.25,'#d59a42');g.addColorStop(.5,'#fff0ad');g.addColorStop(.72,'#bd742b');g.addColorStop(1,'#704315');
+ ctx.fillStyle=g;ctx.shadowColor='rgba(76,44,15,.25)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;
+ ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,Math.min(w,h)*.35);ctx.fill();
+ ctx.shadowColor='transparent';ctx.strokeStyle='rgba(255,244,184,.75)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+}
+function drawClasps(){
+ for(const c of clasps){
+  if(c.open)continue;const g=claspGeometry(c);
+  // 两个套在玉管上的金箍 + 短连接销，始终实际接触玉镯。
+  capsule(g.ax,g.ay,Math.max(13,g.wa*.82),Math.max(18,g.wa*1.35),g.angle+Math.PI/2);
+  capsule(g.bx,g.by,Math.max(13,g.wb*.82),Math.max(18,g.wb*1.35),g.angle+Math.PI/2);
+  const dx=g.bx-g.ax,dy=g.by-g.ay,d=Math.hypot(dx,dy);
+  if(d<52) capsule((g.ax+g.bx)/2,(g.ay+g.by)/2,Math.max(9,d),8,g.angle);
+ }
 }
 function update(){
-  if(activeRing && (activeRing.solved || activeRing.alpha<0.15)){
-    activeRing=null;
-  }
-
-  for(const r of rings){
-    if(r.pulse>0)r.pulse*=.9;
-    if(!r.solved&&r!==activeRing){r.angle+=r.velocity;r.velocity*=.90}
-    if(r.falling){
-      r.dy+=1.35;r.scale*=.993;r.alpha*=.965;
-      if(r.alpha<.03){r.alpha=0;r.falling=false}
-    }
-  }
+ for(const r of rings){
+  if(!r.removed&&r!==selected){r.angle+=r.velocity;r.velocity*=.9}
+  if(r.removed){r.fall+=1.5;r.alpha*=.965}
+ }
+ for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.025;p.life*=.96}
+ particles=particles.filter(p=>p.life>.04);
 }
-function render(){
-  ctx.clearRect(0,0,W,H);
-  drawBackground();drawPetals();rings.forEach(drawRing);drawLinks();update();
-  requestAnimationFrame(render);
+function drawParticles(){
+ for(const p of particles){ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.translate(p.x,p.y);ctx.rotate(p.x*.02);ctx.beginPath();ctx.ellipse(0,0,p.s,p.s*1.7,0,0,Math.PI*2);ctx.fill();ctx.restore()}
 }
-
-resize();loadLevel(0);render();
+function frame(){
+ ctx.clearRect(0,0,W,H);drawBg();rings.forEach(drawRing);drawClasps();drawParticles();update();requestAnimationFrame(frame)
+}
+restartBtn.onclick=()=>loadLevel(levelIndex);
+nextBtn.onclick=()=>loadLevel(levelIndex+1);
+soundBtn.onclick=()=>{soundOn=!soundOn;soundBtn.textContent='音效：'+(soundOn?'开':'关');if(soundOn)tone(740,.12)};
+resize();loadLevel(0);frame();

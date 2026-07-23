@@ -1,33 +1,28 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#eef7f2" />
-  <title>玉环 · Jade Rings</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7e9ef">
+<title>玉环</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <button id="restartBtn" class="ghost">重置</button>
-      <div class="titleWrap">
-        <div class="title">玉环</div>
-        <div class="subtitle">转一环，解一结</div>
-      </div>
-      <div id="levelText" class="level">第一关</div>
-    </header>
-
-    <section id="stageWrap" class="stageWrap theme-spring">
-      <canvas id="game"></canvas>
-      <div id="message" class="message">旋转玉环，让相连开口彼此相对</div>
-    </section>
-
-    <footer class="bottom">
-      <button id="nextBtn" class="primary hidden">下一关</button>
-      <div class="hint">金扣两侧的开口同时对准后，连接会自动解开</div>
-    </footer>
-  </main>
-  <script src="game.js"></script>
+<main class="app">
+  <header>
+    <button id="restart">重置</button>
+    <div class="brand"><b>玉环</b><span>转一环，解一结</span></div>
+    <button id="sound" aria-label="声音">音效：开</button>
+  </header>
+  <section id="stage" class="stage">
+    <canvas id="game"></canvas>
+    <div id="levelName" class="level-name"></div>
+    <div id="hint" class="hint">旋转玉镯，让缺口经过金扣即可脱开</div>
+  </section>
+  <footer>
+    <button id="next" class="next hidden">下一关</button>
+  </footer>
+</main>
+<script src="game.js"></script>
 </body>
 </html>
