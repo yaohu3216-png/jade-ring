@@ -1,50 +1,51 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#d7b8c1">
-<title>玉环 · V10 正式版</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#7f505d" />
+  <title>玉环 2.0 Alpha</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<main class="app">
-  <header class="topbar">
-    <button id="restart" class="pill">重置</button>
-    <div class="brand"><b>玉 环</b><span>玉环轻转，万事圆满</span></div>
-    <div class="audio-controls">
-      <button id="sound" class="pill mini">叮当：开</button>
-      <button id="music" class="pill mini">音乐：开</button>
-    </div>
-  </header>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">YU HUAN · 2.0 ALPHA</div>
+        <h1>玉环</h1>
+        <p id="subtitle">玉环轻转，万事圆满。</p>
+      </div>
+      <div class="controls">
+        <button id="soundBtn" class="pill">叮当：开</button>
+        <button id="musicBtn" class="pill">音乐：关</button>
+      </div>
+    </header>
 
-  <nav class="modebar" aria-label="游戏模式">
-    <button id="chapterMode" class="mode active">闯关</button>
-    <button id="dailyMode" class="mode">今日玉结</button>
-    <button id="share" class="mode">分享挑战</button>
-  </nav>
+    <section class="hud">
+      <div><span>关卡</span><strong id="levelText">1 / 8</strong></div>
+      <div><span>步数</span><strong id="movesText">0</strong></div>
+      <div><span>时间</span><strong id="timeText">00:00</strong></div>
+      <button id="resetBtn" class="reset">重置</button>
+    </section>
 
-  <section id="stage" class="stage" aria-label="玉环解谜游戏">
-    <canvas id="game"></canvas>
-    <div class="level-meta">
-      <div id="levelName" class="level-name"></div>
-      <div id="levelVerse" class="level-verse"></div>
-    </div>
-    <div class="stats">
-      <span>步数 <b id="moves">0</b></span>
-      <span>用时 <b id="timer">00:00</b></span>
-      <span>进度 <b id="progress">1/12</b></span>
-    </div>
-    <div id="hint" class="hint">两只玉环缺口相对，金扣方可解开</div>
-    <div id="toast" class="toast"></div>
-  </section>
+    <section class="stage-wrap">
+      <canvas id="game" aria-label="玉环解谜游戏"></canvas>
+      <div id="toast" class="toast"></div>
+      <div id="complete" class="complete hidden">
+        <div class="seal">吉</div>
+        <h2>此结已解</h2>
+        <p id="resultText"></p>
+        <button id="nextBtn">下一玉结</button>
+      </div>
+    </section>
 
-  <footer>
-    <button id="prev" class="next ghost">上一关</button>
-    <button id="next" class="next hidden">下一关</button>
-  </footer>
+    <footer>
+      <p>拖动玉环旋转。只有相连玉环的缺口真正口对口，金扣才会松开。</p>
+      <div class="legend"><i class="dot half"></i>单侧对准　<i class="dot full"></i>口对口</div>
+    </footer>
+  </main>
   <audio id="bgm" src="assets/bgm.mp3" loop preload="auto"></audio>
-</main>
-<script src="game.js"></script>
+  <script src="src/levels.js"></script>
+  <script src="src/game.js"></script>
 </body>
 </html>

@@ -1,103 +1,41 @@
+(()=>{
 'use strict';
-const $=id=>document.getElementById(id);
-const canvas=$('game'),ctx=canvas.getContext('2d'),bgm=$('bgm');
-const UI={restart:$('restart'),prev:$('prev'),next:$('next'),sound:$('sound'),music:$('music'),chapter:$('chapterMode'),daily:$('dailyMode'),share:$('share'),name:$('levelName'),verse:$('levelVerse'),hint:$('hint'),moves:$('moves'),timer:$('timer'),progress:$('progress'),toast:$('toast')};
-let W=0,H=0,S=0,DPR=Math.min(devicePixelRatio||1,2),rings=[],clasps=[],particles=[];
-let levelIndex=0,mode='chapter',selected=null,lastPointerAngle=0,dragStartAngle=0,moves=0,startAt=0,finished=false;
-let soundOn=true,musicWanted=true,musicPlaying=false,audioCtx=null;
-
-const THEMES={
- pink:{page:['#f7ecec','#dcbfc7'],ink:'#56343e',muted:'rgba(86,52,62,.68)',line:'rgba(104,61,74,.22)',panel:'rgba(255,250,248,.62)',sky:['#faeeec','#e8ced2','#cfaeba'],ring:['#fff8f7','#f2b9c9','#d97e9e','#aa5274'],accent:'#a94f72',petal:'rgba(198,102,133,.48)'},
- purple:{page:['#eee9f5','#cfc1df'],ink:'#463754',muted:'rgba(70,55,84,.68)',line:'rgba(75,55,96,.22)',panel:'rgba(250,248,255,.61)',sky:['#f1ebf7','#d6c8e4','#afa0ca'],ring:['#fcf9ff','#d8c0e8','#9870ba','#60417f'],accent:'#654582',petal:'rgba(124,92,159,.46)'},
- green:{page:['#e7efe7','#b8cec0'],ink:'#244a3a',muted:'rgba(36,74,58,.68)',line:'rgba(38,80,59,.21)',panel:'rgba(247,252,246,.60)',sky:['#eaf2e8','#c8ddce','#8fb7a0'],ring:['#f2fff5','#89cda0','#2d8d63','#075338'],accent:'#176846',petal:'rgba(47,126,83,.43)'},
- white:{page:['#f5f2e9','#d9d7cb'],ink:'#4f4c43',muted:'rgba(79,76,67,.66)',line:'rgba(88,84,72,.21)',panel:'rgba(255,254,247,.64)',sky:['#f8f5ed','#e5e2d7','#c6cbc4'],ring:['#ffffff','#e9f1ed','#bfd3cf','#829f9b'],accent:'#708f8b',petal:'rgba(128,151,145,.42)'},
- blue:{page:['#e8f2f3','#b8d3d7'],ink:'#294b52',muted:'rgba(41,75,82,.66)',line:'rgba(42,83,91,.21)',panel:'rgba(247,253,253,.62)',sky:['#edf7f7','#cce2e3','#92bec4'],ring:['#f7ffff','#b9e3e5','#65b4bd','#277986'],accent:'#357f89',petal:'rgba(74,141,151,.40)'}
-};
-
-// 关卡只由数据定义，后续可以持续添加，不需要改引擎。
-const LEVELS=[
-{name:'第一关 · 桃粉初结',verse:'桃夭映月，双环相迎',theme:'pink',rings:[['A',.40,.42,.120,2.3],['B',.60,.42,.120,4.2]],links:[['A','B']]},
-{name:'第二关 · 三才结',verse:'三星照玉，缺口相逢',theme:'pink',rings:[['A',.50,.25,.105,1.5],['B',.36,.50,.118,3.4],['C',.64,.50,.118,5.1]],links:[['A','B'],['A','C'],['B','C']]},
-{name:'第三关 · 四象结',verse:'四象合和，先后有序',theme:'purple',rings:[['A',.50,.20,.103,2.1],['B',.32,.45,.112,.2],['C',.68,.45,.112,3.5],['D',.50,.70,.116,5.1]],links:[['A','B'],['A','C'],['B','D'],['C','D'],['B','C']]},
-{name:'第四关 · 梅花结',verse:'五瓣含香，玉扣重重',theme:'purple',rings:[['A',.50,.40,.115,4.5],['B',.50,.17,.098,1.0],['C',.29,.36,.101,2.6],['D',.37,.66,.101,.1],['E',.63,.66,.101,3.0],['F',.71,.36,.101,5.2]],links:[['A','B'],['A','C'],['A','D'],['A','E'],['A','F'],['B','C'],['B','F'],['C','D'],['D','E'],['E','F']]},
-{name:'第五关 · 翠竹结',verse:'翠影交横，步步解意',theme:'green',rings:[['A',.34,.24,.104,2.5],['B',.66,.24,.104,.5],['C',.25,.49,.108,4.6],['D',.50,.45,.122,1.0],['E',.75,.49,.108,3.4],['F',.38,.70,.108,5.4],['G',.62,.70,.108,2.0]],links:[['A','C'],['A','D'],['A','B'],['B','D'],['B','E'],['C','D'],['C','F'],['D','F'],['D','G'],['D','E'],['E','G'],['F','G']]},
-{name:'第六关 · 盘长结',verse:'盘长无尽，一扣一缘',theme:'green',rings:[['A',.50,.15,.090,2.8],['B',.33,.30,.098,.2],['C',.67,.30,.098,3.4],['D',.24,.50,.102,4.8],['E',.50,.47,.118,1.2],['F',.76,.50,.102,2.8],['G',.35,.70,.102,5.6],['H',.65,.70,.102,.8],['I',.50,.83,.088,4.1]],links:[['A','B'],['A','C'],['B','C'],['B','D'],['B','E'],['C','E'],['C','F'],['D','E'],['D','G'],['E','F'],['E','G'],['E','H'],['F','H'],['G','H'],['G','I'],['H','I']]},
-{name:'第七关 · 月白连环',verse:'月白生辉，环环相扣',theme:'white',rings:[['A',.26,.27,.097,1.4],['B',.50,.22,.105,3.0],['C',.74,.27,.097,4.6],['D',.23,.53,.104,5.2],['E',.50,.48,.121,.6],['F',.77,.53,.104,2.0],['G',.33,.75,.101,3.8],['H',.67,.75,.101,.9]],links:[['A','B'],['A','D'],['B','C'],['B','E'],['C','F'],['D','E'],['D','G'],['E','F'],['E','G'],['E','H'],['F','H'],['G','H'],['A','E'],['C','E']]},
-{name:'第八关 · 冰心结',verse:'冰心映水，静观其序',theme:'blue',rings:[['A',.50,.13,.087,2.2],['B',.30,.28,.095,.4],['C',.50,.31,.107,4.0],['D',.70,.28,.095,3.1],['E',.20,.51,.100,5.2],['F',.40,.52,.111,1.3],['G',.60,.52,.111,4.6],['H',.80,.51,.100,2.2],['I',.32,.74,.098,3.6],['J',.50,.78,.103,.3],['K',.68,.74,.098,5.0]],links:[['A','B'],['A','C'],['A','D'],['B','C'],['B','E'],['B','F'],['C','D'],['C','F'],['C','G'],['D','G'],['D','H'],['E','F'],['E','I'],['F','G'],['F','I'],['F','J'],['G','H'],['G','J'],['G','K'],['H','K'],['I','J'],['J','K']]},
-{name:'第九关 · 如意结',verse:'如意回环，辨位方开',theme:'pink',rings:[['A',.35,.18,.091,2.8],['B',.65,.18,.091,.5],['C',.23,.37,.098,4.9],['D',.50,.36,.114,1.7],['E',.77,.37,.098,3.4],['F',.20,.61,.100,.3],['G',.40,.62,.108,5.0],['H',.60,.62,.108,2.0],['I',.80,.61,.100,3.9],['J',.35,.81,.092,1.2],['K',.65,.81,.092,4.7]],links:[['A','B'],['A','C'],['A','D'],['B','D'],['B','E'],['C','D'],['C','F'],['D','E'],['D','G'],['D','H'],['E','I'],['F','G'],['F','J'],['G','H'],['G','J'],['H','I'],['H','K'],['I','K'],['J','K']]},
-{name:'第十关 · 九宫玉阵',verse:'九宫藏机，口口相对',theme:'purple',rings:[['A',.28,.22,.092,1.1],['B',.50,.20,.098,3.6],['C',.72,.22,.092,5.2],['D',.25,.47,.101,4.4],['E',.50,.45,.116,.2],['F',.75,.47,.101,2.7],['G',.28,.72,.092,5.5],['H',.50,.70,.098,1.8],['I',.72,.72,.092,3.8]],links:[['A','B'],['A','D'],['A','E'],['B','C'],['B','D'],['B','E'],['B','F'],['C','E'],['C','F'],['D','E'],['D','G'],['D','H'],['E','F'],['E','G'],['E','H'],['E','I'],['F','H'],['F','I'],['G','H'],['H','I']]},
-{name:'第十一关 · 山河结',verse:'山河入玉，繁而不乱',theme:'green',rings:[['A',.50,.11,.079,2.4],['B',.31,.23,.088,.1],['C',.50,.27,.098,4.1],['D',.69,.23,.088,3.2],['E',.17,.43,.091,5.0],['F',.36,.47,.103,1.0],['G',.64,.47,.103,4.8],['H',.83,.43,.091,2.1],['I',.22,.68,.092,3.7],['J',.43,.69,.100,.5],['K',.57,.69,.100,5.5],['L',.78,.68,.092,2.8],['M',.50,.85,.079,4.0]],links:[['A','B'],['A','C'],['A','D'],['B','C'],['B','E'],['B','F'],['C','D'],['C','F'],['C','G'],['D','G'],['D','H'],['E','F'],['E','I'],['F','G'],['F','I'],['F','J'],['G','H'],['G','K'],['G','L'],['H','L'],['I','J'],['J','K'],['J','M'],['K','L'],['K','M']]},
-{name:'第十二关 · 万福同心',verse:'万福同心，诸结皆圆',theme:'white',rings:[['A',.50,.10,.076,1.8],['B',.31,.20,.084,4.1],['C',.50,.25,.096,.4],['D',.69,.20,.084,2.7],['E',.18,.39,.089,5.4],['F',.35,.44,.100,1.4],['G',.50,.47,.110,4.7],['H',.65,.44,.100,2.1],['I',.82,.39,.089,3.5],['J',.20,.64,.090,.2],['K',.38,.66,.099,5.1],['L',.62,.66,.099,1.0],['M',.80,.64,.090,4.0],['N',.35,.84,.083,2.4],['O',.65,.84,.083,5.4]],links:[['A','B'],['A','C'],['A','D'],['B','C'],['B','E'],['B','F'],['C','D'],['C','F'],['C','G'],['C','H'],['D','H'],['D','I'],['E','F'],['E','J'],['F','G'],['F','J'],['F','K'],['G','H'],['G','K'],['G','L'],['H','I'],['H','L'],['H','M'],['I','M'],['J','K'],['J','N'],['K','L'],['K','N'],['L','M'],['L','O'],['M','O'],['N','O']]}
-];
-
-function resize(){const r=canvas.getBoundingClientRect();W=r.width;H=r.height;S=Math.min(W,H);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}
-addEventListener('resize',resize);
-function norm(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a}
-function ring(id){return rings.find(r=>r.id===id)}
-function center(r){return{x:r.x*W,y:H*.085+r.y*S+r.fall}}
-function radius(r){return r.r*S}
-function setTheme(t){for(const [k,v] of Object.entries({page1:t.page[0],page2:t.page[1],ink:t.ink,muted:t.muted,line:t.line,panel:t.panel,accent:t.accent}))document.documentElement.style.setProperty('--'+k,v);document.querySelector('meta[name="theme-color"]').content=t.page[1]}
-function dailyIndex(){const d=new Date(),seed=Number(`${d.getFullYear()}${d.getMonth()+1}${d.getDate()}`);return seed%LEVELS.length}
-function loadLevel(i){
- levelIndex=(i+LEVELS.length)%LEVELS.length;const L=LEVELS[levelIndex],t=THEMES[L.theme];setTheme(t);
- UI.name.textContent=mode==='daily'?'今日玉结 · '+L.name:L.name;UI.verse.textContent=L.verse;
- rings=L.rings.map(([id,x,y,r,a])=>({id,x,y,r,angle:a,velocity:0,fall:0,alpha:1,removed:false}));
- clasps=L.links.map((x,id)=>({id,a:x[0],b:x[1],open:false,flash:0,nearA:false,nearB:false}));particles=[];selected=null;moves=0;startAt=performance.now();finished=false;
- UI.moves.textContent='0';UI.progress.textContent=mode==='daily'?'今日':`${levelIndex+1}/${LEVELS.length}`;UI.next.classList.add('hidden');UI.prev.classList.toggle('hidden',mode==='daily');UI.hint.textContent='两只玉环缺口相对，金扣方可解开';
-}
-function pointer(e){const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}}
-function pick(p){let best=null,score=Infinity;for(const r of rings){if(r.removed||r.alpha<.15)continue;const c=center(r),rr=radius(r),d=Math.hypot(p.x-c.x,p.y-c.y);if(d<rr*.56||d>rr*1.45)continue;const s=Math.abs(d-rr);if(s<score){score=s;best=r}}return best}
-function down(e){e.preventDefault();ensureMusic();selected=pick(pointer(e));if(!selected)return;selected.velocity=0;const p=pointer(e),c=center(selected);lastPointerAngle=Math.atan2(p.y-c.y,p.x-c.x);dragStartAngle=selected.angle;try{canvas.setPointerCapture(e.pointerId)}catch(_){}}
-function move(e){if(!selected)return;e.preventDefault();const p=pointer(e),c=center(selected),a=Math.atan2(p.y-c.y,p.x-c.x),d=norm(a-lastPointerAngle);selected.angle+=d;selected.velocity=d*.7;lastPointerAngle=a;testClasps()}
-function up(e){if(selected&&Math.abs(norm(selected.angle-dragStartAngle))>.035){moves++;UI.moves.textContent=moves}testClasps();selected=null;try{if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId)}catch(_){}}
-canvas.addEventListener('pointerdown',down,{passive:false});canvas.addEventListener('pointermove',move,{passive:false});canvas.addEventListener('pointerup',up,{passive:false});canvas.addEventListener('pointercancel',up,{passive:false});
-function direction(A,B){const a=center(A),b=center(B);return Math.atan2(b.y-a.y,b.x-a.x)}
-function aligned(r,dir){return Math.abs(norm(r.angle-dir))<.18}
-function testClasps(){
- for(const c of clasps){if(c.open)continue;const A=ring(c.a),B=ring(c.b);if(!A||!B||A.removed||B.removed)continue;const ab=direction(A,B),ba=norm(ab+Math.PI);c.nearA=aligned(A,ab);c.nearB=aligned(B,ba);
-  // V10核心规则：必须两只玉环的缺口同时面对同一金扣，才会解开。
-  if(c.nearA&&c.nearB){c.open=true;c.flash=1;A.velocity=B.velocity=0;const g=claspGeometry(c);playUnlock();spawn(g.mx,g.my,14)}
- }
- updateRemoval();
-}
-function updateRemoval(){
- for(const r of rings){if(r.removed)continue;const locked=clasps.some(c=>!c.open&&(c.a===r.id||c.b===r.id));if(!locked){r.removed=true;r.velocity=0;setTimeout(playDrop,80)}}
- if(!finished&&clasps.every(c=>c.open)){finished=true;const sec=Math.max(1,Math.floor((performance.now()-startAt)/1000));saveResult(sec,moves);UI.hint.textContent=mode==='daily'?`今日玉结完成 · ${moves}步 · ${format(sec)}`:'诸结皆解，玉环圆满';UI.next.textContent=levelIndex===LEVELS.length-1?'再游一轮':'下一关';UI.next.classList.remove('hidden');for(let i=0;i<42;i++)spawn(W/2,H*.48,1);toast('玉开吉运，万事圆满')}
- else if(clasps.some(c=>c.open))UI.hint.textContent='金扣已松，继续寻找相对的缺口';
- else{const half=clasps.find(c=>c.nearA!==c.nearB);UI.hint.textContent=half?'一侧已对准，再转动另一只玉环':'两只玉环缺口相对，金扣方可解开'}
-}
-function saveResult(sec,mv){const key=mode==='daily'?`jade-daily-${new Date().toISOString().slice(0,10)}`:`jade-level-${levelIndex}`;const old=JSON.parse(localStorage.getItem(key)||'null');if(!old||sec<old.sec)localStorage.setItem(key,JSON.stringify({sec,moves:mv,date:Date.now()}));localStorage.setItem('jade-last-level',String(levelIndex))}
-function format(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
-function toast(text){UI.toast.textContent=text;UI.toast.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>UI.toast.classList.remove('show'),1500)}
-
-function audio(){if(!audioCtx)audioCtx=new(AudioContext||webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
-function tone(freq,delay,gain,dur){if(!soundOn)return;const ac=audio(),now=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain(),f=ac.createBiquadFilter();o.type='sine';o.frequency.setValueAtTime(freq,now);f.type='highpass';f.frequency.value=560;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+dur);o.connect(f);f.connect(g);g.connect(ac.destination);o.start(now);o.stop(now+dur+.05)}
-function playUnlock(){tone(1174.66,0,.034,.55);tone(1760,.035,.021,.42);tone(2349.32,.075,.012,.30)}function playDrop(){tone(783.99,0,.017,.28)}
-async function startMusic(){try{bgm.volume=.30;await bgm.play();musicPlaying=true;musicWanted=true;UI.music.textContent='音乐：开'}catch(_){musicPlaying=false;UI.music.textContent='音乐：待触发'}}function stopMusic(){bgm.pause();musicPlaying=false;musicWanted=false;UI.music.textContent='音乐：关'}function ensureMusic(){if(musicWanted&&!musicPlaying)startMusic()}
-function spawn(x,y,n=10){const t=THEMES[LEVELS[levelIndex].theme];for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*3.6,vy:-.5-Math.random()*2.7,life:1,s:2+Math.random()*4,color:t.petal})}
-
-function drawBackground(){const t=THEMES[LEVELS[levelIndex].theme],time=performance.now()/1000,g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,t.sky[0]);g.addColorStop(.50,t.sky[1]);g.addColorStop(1,t.sky[2]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- ctx.save();ctx.globalAlpha=.045;ctx.fillStyle=t.ink;for(let i=0;i<150;i++){const x=(i*73%997)/997*W,y=(i*151%991)/991*H;ctx.fillRect(x,y,1+(i%3)*.25,1)}ctx.restore();
- const mx=W*.80,my=H*.13,mr=S*.048,halo=ctx.createRadialGradient(mx,my,2,mx,my,S*.22);halo.addColorStop(0,'rgba(255,248,218,.58)');halo.addColorStop(.24,'rgba(255,245,211,.15)');halo.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=halo;ctx.fillRect(0,0,W,H*.4);ctx.save();ctx.fillStyle='rgba(255,246,215,.75)';ctx.shadowColor='rgba(255,239,191,.40)';ctx.shadowBlur=24;ctx.beginPath();ctx.arc(mx,my,mr,0,Math.PI*2);ctx.fill();ctx.restore();
- ctx.save();ctx.fillStyle=t.accent;ctx.globalAlpha=.09;ctx.beginPath();ctx.moveTo(0,H*.30);ctx.bezierCurveTo(W*.16,H*.21,W*.28,H*.34,W*.43,H*.25);ctx.bezierCurveTo(W*.57,H*.17,W*.71,H*.34,W*.84,H*.25);ctx.bezierCurveTo(W*.93,H*.20,W,H*.29,W,H*.29);ctx.lineTo(W,H*.45);ctx.lineTo(0,H*.45);ctx.closePath();ctx.fill();ctx.restore();
- ctx.save();ctx.strokeStyle=t.accent;ctx.globalAlpha=.085;for(let i=0;i<9;i++){const y=H*(.30+i*.075);ctx.beginPath();ctx.moveTo(-25,y);ctx.bezierCurveTo(W*.25,y-5+Math.sin(time*.35+i)*2,W*.68,y+7,W+25,y);ctx.stroke()}ctx.restore();
- ctx.save();ctx.globalAlpha=.16;ctx.strokeStyle=t.accent;ctx.fillStyle=t.accent;if(LEVELS[levelIndex].theme==='pink'){ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W*.06,H);ctx.quadraticCurveTo(W*.14,H*.77,W*.29,H*.70);ctx.stroke();for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(W*(.17+i*.022),H*(.80-i*.025),8,4,i*.45,0,Math.PI*2);ctx.fill()}}else if(LEVELS[levelIndex].theme==='green'){ctx.lineWidth=3;for(let i=0;i<4;i++){const x=W*(.12+i*.25);ctx.beginPath();ctx.moveTo(x,H);ctx.quadraticCurveTo(x+10,H*.78,x+4,H*.60);ctx.stroke()}}else{for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(W*(.10+i*.16),H*(.80+Math.sin(i)*.025),S*(.035+i%2*.012),0,Math.PI*2);ctx.stroke()}}ctx.restore();
- const fog=ctx.createLinearGradient(0,H*.40,W,H*.58);fog.addColorStop(0,'rgba(255,255,255,0)');fog.addColorStop(.5,'rgba(255,255,255,.13)');fog.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.translate(Math.sin(time*.16)*18,0);ctx.fillStyle=fog;ctx.fillRect(-30,H*.39,W+60,H*.22);ctx.restore();}
-function jadeGradient(rr){const t=THEMES[LEVELS[levelIndex].theme],g=ctx.createLinearGradient(-rr,-rr,rr,rr);g.addColorStop(0,t.ring[0]);g.addColorStop(.23,t.ring[1]);g.addColorStop(.52,t.ring[2]);g.addColorStop(.72,t.ring[3]);g.addColorStop(.88,t.ring[1]);g.addColorStop(1,t.ring[0]);return g}
-function drawRing(r){const rr=radius(r),c=center(r),gap=.78,w=rr*.29,time=performance.now()/1000;ctx.save();ctx.globalAlpha=r.alpha;ctx.translate(c.x,c.y);ctx.lineCap='round';ctx.shadowColor='rgba(50,32,40,.18)';ctx.shadowBlur=12;ctx.shadowOffsetY=6;ctx.strokeStyle=jadeGradient(rr);ctx.lineWidth=w;ctx.beginPath();ctx.arc(0,0,rr,r.angle+gap/2,r.angle+Math.PI*2-gap/2);ctx.stroke();ctx.shadowColor='transparent';ctx.globalAlpha=r.alpha*.30;ctx.strokeStyle='rgba(255,255,255,.76)';ctx.lineWidth=w*.52;ctx.beginPath();ctx.arc(0,0,rr,r.angle+gap/2+.04,r.angle+Math.PI*2-gap/2-.04);ctx.stroke();ctx.globalAlpha=r.alpha*.68;ctx.strokeStyle='rgba(255,255,255,.86)';ctx.lineWidth=w*.09;const shine=.72+Math.sin(time*.7+r.id.charCodeAt(0))*.28;ctx.beginPath();ctx.arc(-rr*.03,-rr*.05,rr,r.angle+gap/2+.18,r.angle+gap/2+.18+1.05*shine);ctx.stroke();ctx.globalAlpha=r.alpha*.13;ctx.strokeStyle='#fff';ctx.lineWidth=1.2;for(let i=0;i<5;i++){const a=r.angle+.65+i*.95;ctx.beginPath();ctx.arc(0,0,rr+(i%2?2:-2),a,a+.18);ctx.stroke()}ctx.restore()}
-function claspGeometry(c){const A=ring(c.a),B=ring(c.b),ca=center(A),cb=center(B),ang=Math.atan2(cb.y-ca.y,cb.x-ca.x),ra=radius(A),rb=radius(B);const ax=ca.x+Math.cos(ang)*ra,ay=ca.y+Math.sin(ang)*ra,bx=cb.x-Math.cos(ang)*rb,by=cb.y-Math.sin(ang)*rb;return{A,B,ang,ax,ay,bx,by,mx:(ax+bx)/2,my:(ay+by)/2,ta:ra*.29,tb:rb*.29}}
-function roundedRect(x,y,w,h,r){const q=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath()}
-function goldGradient(w,lit){const g=ctx.createLinearGradient(-w/2,0,w/2,0);g.addColorStop(0,'#6b3d0d');g.addColorStop(.18,'#b87824');g.addColorStop(.44,lit?'#fff4bf':'#ffe19a');g.addColorStop(.63,'#d59b3d');g.addColorStop(1,'#70410d');return g}
-function drawSleeve(x,y,tube,radialAngle,front,lit){const tangent=radialAngle+Math.PI/2,w=tube*.90,h=tube*1.30;ctx.save();ctx.translate(x,y);ctx.rotate(tangent);if(!front){ctx.globalAlpha=.87;ctx.fillStyle='#70420f';ctx.shadowColor='rgba(45,24,7,.25)';ctx.shadowBlur=5;roundedRect(-w/2,-h/2,w,h,h*.27);ctx.fill()}else{ctx.fillStyle=goldGradient(w,lit);ctx.shadowColor=lit?'rgba(255,230,150,.65)':'rgba(48,25,7,.22)';ctx.shadowBlur=lit?12:4;roundedRect(-w/2,-h*.35,w,h*.70,h*.22);ctx.fill();ctx.shadowColor='transparent';ctx.fillStyle='rgba(255,244,196,.72)';roundedRect(-w*.28,-h*.27,w*.10,h*.54,h*.06);ctx.fill();ctx.strokeStyle='rgba(92,51,10,.48)';ctx.lineWidth=1;roundedRect(-w/2,-h*.35,w,h*.70,h*.22);ctx.stroke();ctx.strokeStyle='rgba(255,225,148,.62)';ctx.beginPath();ctx.moveTo(-w*.42,-h*.29);ctx.lineTo(-w*.42,h*.29);ctx.moveTo(w*.42,-h*.29);ctx.lineTo(w*.42,h*.29);ctx.stroke()}ctx.restore()}
-function drawClasps(front){for(const c of clasps){if(c.open)continue;const g=claspGeometry(c);if(g.A.removed||g.B.removed)continue;const lit=c.nearA||c.nearB;drawSleeve(g.ax,g.ay,g.ta,g.ang,front,lit);drawSleeve(g.bx,g.by,g.tb,g.ang+Math.PI,front,lit)}}
-function drawParticles(){for(const p of particles){ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.translate(p.x,p.y);ctx.rotate(p.x*.02);ctx.beginPath();ctx.ellipse(0,0,p.s,p.s*1.6,0,0,Math.PI*2);ctx.fill();ctx.restore()}}
-function update(){for(const r of rings){if(!r.removed&&r!==selected){r.angle+=r.velocity;r.velocity*=.84;if(Math.abs(r.velocity)<.0002)r.velocity=0}if(r.removed){r.fall+=1.5;r.alpha*=.962}}for(const c of clasps)c.flash*=.9;for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.026;p.life*=.96}particles=particles.filter(p=>p.life>.04);if(!finished)UI.timer.textContent=format(Math.floor((performance.now()-startAt)/1000))}
-function frame(){ctx.clearRect(0,0,W,H);drawBackground();drawClasps(false);rings.forEach(drawRing);drawClasps(true);drawParticles();update();requestAnimationFrame(frame)}
-
-UI.restart.onclick=()=>loadLevel(levelIndex);UI.prev.onclick=()=>loadLevel(levelIndex-1);UI.next.onclick=()=>loadLevel(levelIndex+1);
-UI.sound.onclick=()=>{soundOn=!soundOn;UI.sound.textContent='叮当：'+(soundOn?'开':'关');if(soundOn)playUnlock()};UI.music.onclick=()=>{if(musicWanted||musicPlaying)stopMusic();else startMusic()};
-UI.chapter.onclick=()=>{mode='chapter';UI.chapter.classList.add('active');UI.daily.classList.remove('active');loadLevel(Number(localStorage.getItem('jade-last-level')||0))};
-UI.daily.onclick=()=>{mode='daily';UI.daily.classList.add('active');UI.chapter.classList.remove('active');loadLevel(dailyIndex())};
-UI.share.onclick=async()=>{const sec=Math.max(1,Math.floor((performance.now()-startAt)/1000)),text=`我正在挑战《玉环》${UI.name.textContent}，当前 ${moves} 步、${format(sec)}。你能更快解开吗？`;try{if(navigator.share)await navigator.share({title:'玉环',text,url:location.href});else{await navigator.clipboard.writeText(text+' '+location.href);toast('挑战文案已复制')}}catch(_){toast('分享已取消')}};
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&musicPlaying)bgm.pause();else if(!document.hidden&&musicWanted)startMusic()});
-resize();loadLevel(Number(localStorage.getItem('jade-last-level')||0));frame();
+const $=s=>document.querySelector(s), canvas=$('#game'), ctx=canvas.getContext('2d');
+const ui={level:$('#levelText'),moves:$('#movesText'),time:$('#timeText'),subtitle:$('#subtitle'),toast:$('#toast'),complete:$('#complete'),result:$('#resultText'),bgm:$('#bgm')};
+let levelIndex=0,rings=[],locks=[],selected=null,lastAngle=0,moves=0,start=Date.now(),done=false,soundOn=true,musicOn=false,dpr=1,W=0,H=0;
+const norm=a=>((a%360)+360)%360, rad=d=>d*Math.PI/180, angleDiff=(a,b)=>Math.abs(((a-b+540)%360)-180);
+function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);W=r.width;H=r.height;load(levelIndex,false)}
+function load(i,resetClock=true){levelIndex=(i+YH_LEVELS.length)%YH_LEVELS.length;const L=YH_LEVELS[levelIndex],s=Math.min(W,H),cx=W/2,cy=H/2+4;
+ rings=L.rings.map((r,id)=>({id,x:cx+r[0]*W,y:cy+r[1]*H,r:r[2]*s,rot:r[3],gap:42,width:Math.max(13,s*.028),color:L.palette[id%L.palette.length],released:false,pulse:0}));
+ locks=L.locks.map((q,id)=>({id,a:q[0],b:q[1],aa:q[2],ba:q[3],released:false,anim:0}));
+ moves=0;done=false;selected=null;if(resetClock)start=Date.now();ui.level.textContent=`${levelIndex+1} / ${YH_LEVELS.length}`;ui.moves.textContent='0';ui.subtitle.textContent=L.name+' · 缺口相见，方可解结';ui.complete.classList.add('hidden');render();}
+function ringPoint(r,a){const t=rad(a);return{x:r.x+Math.cos(t)*r.r,y:r.y+Math.sin(t)*r.r}}
+function aligned(r,target){return angleDiff(norm(r.rot),norm(target))<10}
+function lockState(l){if(l.released)return 2;const A=rings[l.a],B=rings[l.b],am=aligned(A,l.aa),bm=aligned(B,l.ba);return am&&bm?2:(am||bm?1:0)}
+function checkLocks(){let opened=false;for(const l of locks){if(l.released)continue;const st=lockState(l);if(st===2){l.released=true;l.anim=1;opened=true;chime(690);rings[l.a].pulse=rings[l.b].pulse=1}}
+ if(opened){toast('金扣已松');setTimeout(()=>{if(locks.every(l=>l.released)){done=true;ui.result.textContent=`${moves} 步 · ${formatTime((Date.now()-start)/1000)}`;ui.complete.classList.remove('hidden');chime(880)}},420)} }
+function drawBackground(){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(255,252,250,.76)');g.addColorStop(1,'rgba(226,185,196,.48)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle='#a66c79';ctx.lineWidth=1;for(let i=0;i<7;i++){ctx.beginPath();ctx.arc(W*.12+i*W*.14,H*.85+(i%2)*9,55+i*7,Math.PI*1.08,Math.PI*1.88);ctx.stroke()}ctx.restore()}
+function drawRing(r){ctx.save();ctx.lineCap='round';const start=rad(r.rot+r.gap/2),end=rad(r.rot+360-r.gap/2);
+ ctx.shadowColor='rgba(75,37,46,.22)';ctx.shadowBlur=12;ctx.shadowOffsetY=7;ctx.lineWidth=r.width+4;ctx.strokeStyle='rgba(255,255,255,.34)';ctx.beginPath();ctx.arc(r.x,r.y,r.r,start,end);ctx.stroke();
+ const grad=ctx.createLinearGradient(r.x-r.r,r.y-r.r,r.x+r.r,r.y+r.r);grad.addColorStop(0,'rgba(255,255,255,.94)');grad.addColorStop(.18,r.color);grad.addColorStop(.52,r.color);grad.addColorStop(.82,'rgba(255,255,255,.65)');grad.addColorStop(1,r.color);ctx.shadowBlur=0;ctx.lineWidth=r.width;ctx.strokeStyle=grad;ctx.beginPath();ctx.arc(r.x,r.y,r.r,start,end);ctx.stroke();
+ ctx.globalAlpha=.22;ctx.lineWidth=Math.max(2,r.width*.18);ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(r.x-r.width*.08,r.y-r.width*.08,r.r,start+.15,end-.15);ctx.stroke();
+ for(let i=0;i<7;i++){const a=start+(end-start)*(i/7)+Math.sin(i*2.1)*.08,p=ringPoint(r,a*180/Math.PI);ctx.fillStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.ellipse(p.x,p.y,r.width*.46,r.width*.14,a,0,Math.PI*2);ctx.fill()}
+ if(r.pulse>0){ctx.globalAlpha=r.pulse*.7;ctx.shadowColor='#fff7c2';ctx.shadowBlur=25;ctx.lineWidth=r.width+5;ctx.strokeStyle='#fff9da';ctx.beginPath();ctx.arc(r.x,r.y,r.r,start,end);ctx.stroke();r.pulse=Math.max(0,r.pulse-.035)}ctx.restore()}
+function lockPosition(l){const A=rings[l.a],B=rings[l.b];return{x:(A.x+B.x)/2,y:(A.y+B.y)/2,ang:Math.atan2(B.y-A.y,B.x-A.x)}}
+function drawLock(l,front){if(l.released&&l.anim<=0)return;const p=lockPosition(l),A=rings[l.a],w=Math.max(16,A.width*1.45),h=Math.max(10,A.width*.9);ctx.save();ctx.translate(p.x,p.y+(l.released?(1-l.anim)*70:0));ctx.rotate(p.ang);ctx.globalAlpha=l.released?l.anim:1;const st=lockState(l);const gold=st===2?'#fff0ad':st===1?'#e9b85d':'#bd8237';
+ const g=ctx.createLinearGradient(-w/2,0,w/2,0);g.addColorStop(0,'#7c481e');g.addColorStop(.28,gold);g.addColorStop(.52,'#fff0b1');g.addColorStop(.75,gold);g.addColorStop(1,'#6c3d1a');ctx.fillStyle=g;ctx.strokeStyle='rgba(95,51,18,.7)';ctx.lineWidth=1;
+ ctx.beginPath();if(front){ctx.roundRect(-w/2,-h*.12,w,h*.62,3)}else{ctx.roundRect(-w/2,-h*.5,w,h*.55,3)}ctx.fill();ctx.stroke();if(front){ctx.globalAlpha*=.65;ctx.strokeStyle='#fff3b9';ctx.beginPath();ctx.moveTo(-w*.34,-h*.02);ctx.lineTo(w*.34,-h*.02);ctx.stroke()}ctx.restore();if(l.released)l.anim=Math.max(0,l.anim-.026)}
+function render(){drawBackground();for(const l of locks)drawLock(l,false);for(const r of rings)drawRing(r);for(const l of locks)drawLock(l,true);requestAnimationFrame(render)}
+function pick(x,y){let best=null,bd=1e9;for(const r of rings){const d=Math.abs(Math.hypot(x-r.x,y-r.y)-r.r);if(d<r.width*1.8&&d<bd){best=r;bd=d}}return best}
+function pos(e){const r=canvas.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
+function down(e){if(done)return;e.preventDefault();const p=pos(e);selected=pick(p.x,p.y);if(selected){lastAngle=Math.atan2(p.y-selected.y,p.x-selected.x);canvas.setPointerCapture?.(e.pointerId)}}
+function move(e){if(!selected)return;e.preventDefault();const p=pos(e),a=Math.atan2(p.y-selected.y,p.x-selected.x),d=(a-lastAngle)*180/Math.PI;selected.rot=norm(selected.rot+d);lastAngle=a}
+function up(e){if(!selected)return;e.preventDefault();moves++;ui.moves.textContent=String(moves);selected=null;checkLocks()}
+canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+function toast(t){ui.toast.textContent=t;ui.toast.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>ui.toast.classList.remove('show'),900)}
+function formatTime(s){s=Math.floor(s);return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+setInterval(()=>{if(!done)ui.time.textContent=formatTime((Date.now()-start)/1000)},500);
+let ac;function chime(freq){if(!soundOn)return;ac??=new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(freq,ac.currentTime);o.frequency.exponentialRampToValueAtTime(freq*.72,ac.currentTime+.45);g.gain.setValueAtTime(.0001,ac.currentTime);g.gain.exponentialRampToValueAtTime(.12,ac.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.55);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.58)}
+$('#resetBtn').onclick=()=>load(levelIndex);$('#nextBtn').onclick=()=>load(levelIndex+1);$('#soundBtn').onclick=e=>{soundOn=!soundOn;e.target.textContent=`叮当：${soundOn?'开':'关'}`};$('#musicBtn').onclick=async e=>{musicOn=!musicOn;ui.bgm.volume=.28;if(musicOn){try{await ui.bgm.play()}catch{musicOn=false;toast('请再次点击开启音乐')}}else ui.bgm.pause();e.target.textContent=`音乐：${musicOn?'开':'关'}`};
+window.addEventListener('resize',resize);resize();
+})();
