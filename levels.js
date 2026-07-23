@@ -1,116 +1,39 @@
-export const CHAPTER = {
-  name:'桃天·草莓晶',
-  subtitle:'粉晶映花，金扣成结。'
-};
+(function(){
+  const THEMES=[
+    {id:'strawberry',no:'第一章',title:'桃天草莓晶',short:'草莓晶',bg:'assets/bg-pink.webp',colors:['#fff7fb','#f9b9ce','#df6f9b','#9f3f68'],gem:'#ffb5d2',poem:'桃之夭夭，灼灼其华。'},
+    {id:'white',no:'第二章',title:'月华白玉髓',short:'白玉髓',bg:'assets/bg-white.webp',colors:['#ffffff','#f6f0df','#d9cfb6','#9e9277'],gem:'#c9f6ff',poem:'皎若凝脂，静若初雪。'},
+    {id:'jade',no:'第三章',title:'青岚翡翠',short:'翡翠',bg:'assets/bg-green.webp',colors:['#effff3','#9ee4b4','#36a96b','#11623c'],gem:'#d6fff1',poem:'青岚入佩，碧水生光。'},
+    {id:'amethyst',no:'第四章',title:'紫烟星晶',short:'紫晶',bg:'assets/bg-purple.webp',colors:['#fff4ff','#d8b1f1','#9561c4','#59317d'],gem:'#e7c6ff',poem:'紫气凝华，星辉入梦。'},
+    {id:'rose',no:'第五章',title:'流霞粉玉',short:'粉玉',bg:'assets/bg-pink.webp',colors:['#fff4f8','#f6a8c5','#d45f8f','#8d385e'],gem:'#ffd0de',poem:'流霞映水，花影摇风。'},
+    {id:'blue',no:'第六章',title:'雨后天青',short:'天青',bg:'assets/bg-blue.webp',colors:['#f2fdff','#a9dff2','#4eadd1','#24657f'],gem:'#d8f9ff',poem:'雨过天青，云破月来。'},
+    {id:'amber',no:'第七章',title:'琥珀金珀',short:'琥珀',bg:'assets/bg-gold.webp',colors:['#fff5d8','#f6c867','#d88722','#8e4d12'],gem:'#fff0a4',poem:'琥珀流光，秋水长天。'},
+    {id:'onyx',no:'第八章',title:'玄夜墨玉',short:'墨玉',bg:'assets/bg-black.webp',colors:['#d9e3df','#66716e','#252b2a','#090d0c'],gem:'#e3f5ff',poem:'玄夜藏辉，墨玉含章。'}
+  ];
 
-export const LEVELS = [
-  {
-    name:'桃花初结',
-    rings:[
-      {id:'A',x:0,y:1.72,radius:.88,opening:232,z:.02,seed:11},
-      {id:'B',x:-1.18,y:.34,radius:.88,opening:184,z:.05,seed:22},
-      {id:'C',x:1.18,y:.34,radius:.88,opening:356,z:.04,seed:33},
-      {id:'D',x:-.72,y:-1.22,radius:.88,opening:137,z:.08,seed:44},
-      {id:'E',x:.72,y:-1.22,radius:.88,opening:43,z:.07,seed:55}
-    ],
-    clasps:[
-      {id:'L1',host:'A',guest:'B',x:-.55,y:1.05,order:0,tilt:-42,diamond:true},
-      {id:'L2',host:'A',guest:'C',x:.55,y:1.05,order:1,tilt:42},
-      {id:'L3',host:'B',guest:'D',x:-.96,y:-.43,order:2,tilt:-24},
-      {id:'L4',host:'C',guest:'E',x:.96,y:-.43,order:3,tilt:24,diamond:true},
-      {id:'L5',host:'D',guest:'E',x:0,y:-1.22,order:4,tilt:0}
-    ]
-  },
-  {
-    name:'双燕衔环',
-    rings:[
-      {id:'A',x:-1.02,y:1.2,radius:.84,opening:212,z:.06,seed:61},
-      {id:'B',x:1.02,y:1.2,radius:.84,opening:328,z:.05,seed:62},
-      {id:'C',x:0,y:.04,radius:.93,opening:92,z:.02,seed:63},
-      {id:'D',x:-1.02,y:-1.18,radius:.84,opening:153,z:.08,seed:64},
-      {id:'E',x:1.02,y:-1.18,radius:.84,opening:27,z:.07,seed:65}
-    ],
-    clasps:[
-      {id:'L1',host:'C',guest:'A',x:-.53,y:.71,order:0,tilt:-35,diamond:true},
-      {id:'L2',host:'C',guest:'B',x:.53,y:.71,order:1,tilt:35},
-      {id:'L3',host:'A',guest:'D',x:-1.02,y:.02,order:2,tilt:0},
-      {id:'L4',host:'B',guest:'E',x:1.02,y:.02,order:3,tilt:0,diamond:true},
-      {id:'L5',host:'D',guest:'E',x:0,y:-1.18,order:4,tilt:0}
-    ]
-  },
-  {
-    name:'九华连绮',
-    rings:[
-      {id:'A',x:0,y:2.02,radius:.71,opening:182,z:.04,seed:71},
-      {id:'B',x:-1.08,y:1.04,radius:.71,opening:240,z:.07,seed:72},
-      {id:'C',x:1.08,y:1.04,radius:.71,opening:300,z:.06,seed:73},
-      {id:'D',x:-1.45,y:-.16,radius:.71,opening:182,z:.09,seed:74},
-      {id:'E',x:0,y:-.14,radius:.71,opening:91,z:.03,seed:75},
-      {id:'F',x:1.45,y:-.16,radius:.71,opening:358,z:.08,seed:76},
-      {id:'G',x:-.88,y:-1.34,radius:.71,opening:132,z:.1,seed:77},
-      {id:'H',x:.88,y:-1.34,radius:.71,opening:48,z:.09,seed:78}
-    ],
-    clasps:[
-      {id:'L1',host:'A',guest:'B',x:-.5,y:1.57,order:0,tilt:-35,diamond:true},
-      {id:'L2',host:'A',guest:'C',x:.5,y:1.57,order:1,tilt:35},
-      {id:'L3',host:'B',guest:'D',x:-1.28,y:.43,order:2,tilt:-20},
-      {id:'L4',host:'B',guest:'E',x:-.52,y:.39,order:3,tilt:20},
-      {id:'L5',host:'C',guest:'E',x:.52,y:.39,order:4,tilt:-20,diamond:true},
-      {id:'L6',host:'C',guest:'F',x:1.28,y:.43,order:5,tilt:20},
-      {id:'L7',host:'D',guest:'G',x:-1.16,y:-.75,order:6,tilt:0},
-      {id:'L8',host:'F',guest:'H',x:1.16,y:-.75,order:7,tilt:0,diamond:true},
-      {id:'L9',host:'G',guest:'H',x:0,y:-1.34,order:8,tilt:0}
-    ]
-  },
-  {
-    name:'流霞玉锁',
-    rings:[
-      {id:'A',x:0,y:1.86,radius:.76,opening:198,z:.04,seed:81},
-      {id:'B',x:-1.12,y:.8,radius:.77,opening:250,z:.08,seed:82},
-      {id:'C',x:1.12,y:.8,radius:.77,opening:290,z:.07,seed:83},
-      {id:'D',x:-1.15,y:-.72,radius:.77,opening:165,z:.1,seed:84},
-      {id:'E',x:0,y:-.1,radius:.82,opening:90,z:.03,seed:85},
-      {id:'F',x:1.15,y:-.72,radius:.77,opening:15,z:.09,seed:86},
-      {id:'G',x:0,y:-1.7,radius:.76,opening:0,z:.11,seed:87}
-    ],
-    clasps:[
-      {id:'L1',host:'E',guest:'A',x:0,y:1.02,order:0,tilt:0,diamond:true},
-      {id:'L2',host:'A',guest:'B',x:-.55,y:1.34,order:1,tilt:-35},
-      {id:'L3',host:'A',guest:'C',x:.55,y:1.34,order:2,tilt:35},
-      {id:'L4',host:'B',guest:'D',x:-1.14,y:.03,order:3,tilt:0},
-      {id:'L5',host:'B',guest:'E',x:-.55,y:.34,order:4,tilt:22,diamond:true},
-      {id:'L6',host:'C',guest:'E',x:.55,y:.34,order:5,tilt:-22},
-      {id:'L7',host:'C',guest:'F',x:1.14,y:.03,order:6,tilt:0},
-      {id:'L8',host:'D',guest:'G',x:-.55,y:-1.2,order:7,tilt:-25},
-      {id:'L9',host:'F',guest:'G',x:.55,y:-1.2,order:8,tilt:25}
-    ]
-  },
-  {
-    name:'桃华圆满',
-    rings:[
-      {id:'A',x:0,y:2.05,radius:.69,opening:180,z:.04,seed:91},
-      {id:'B',x:-1.12,y:1.15,radius:.69,opening:235,z:.06,seed:92},
-      {id:'C',x:1.12,y:1.15,radius:.69,opening:305,z:.05,seed:93},
-      {id:'D',x:-1.55,y:-.05,radius:.69,opening:190,z:.08,seed:94},
-      {id:'E',x:0,y:.12,radius:.78,opening:90,z:.02,seed:95},
-      {id:'F',x:1.55,y:-.05,radius:.69,opening:350,z:.07,seed:96},
-      {id:'G',x:-1.08,y:-1.35,radius:.69,opening:140,z:.1,seed:97},
-      {id:'H',x:1.08,y:-1.35,radius:.69,opening:40,z:.09,seed:98},
-      {id:'I',x:0,y:-2.03,radius:.69,opening:0,z:.11,seed:99}
-    ],
-    clasps:[
-      {id:'L1',host:'A',guest:'B',x:-.52,y:1.62,order:0,tilt:-34,diamond:true},
-      {id:'L2',host:'A',guest:'C',x:.52,y:1.62,order:1,tilt:34},
-      {id:'L3',host:'B',guest:'D',x:-1.35,y:.55,order:2,tilt:-18},
-      {id:'L4',host:'B',guest:'E',x:-.55,y:.62,order:3,tilt:18},
-      {id:'L5',host:'C',guest:'E',x:.55,y:.62,order:4,tilt:-18,diamond:true},
-      {id:'L6',host:'C',guest:'F',x:1.35,y:.55,order:5,tilt:18},
-      {id:'L7',host:'D',guest:'G',x:-1.3,y:-.7,order:6,tilt:-8},
-      {id:'L8',host:'E',guest:'G',x:-.55,y:-.72,order:7,tilt:24},
-      {id:'L9',host:'E',guest:'H',x:.55,y:-.72,order:8,tilt:-24,diamond:true},
-      {id:'L10',host:'F',guest:'H',x:1.3,y:-.7,order:9,tilt:8},
-      {id:'L11',host:'G',guest:'I',x:-.5,y:-1.68,order:10,tilt:-26},
-      {id:'L12',host:'H',guest:'I',x:.5,y:-1.68,order:11,tilt:26}
-    ]
+  // ring: [id,x,y,r]
+  // link: [host,target,gemCount]
+  // board: [target,angle,gemCount]
+  const TEMPLATES=[
+    {name:'初见玉结',rings:[['A',450,520,88],['B',325,355,78],['C',575,355,78],['D',205,535,72],['E',695,535,72],['F',330,705,75],['G',570,705,75]],links:[['A','B',2],['A','C',1],['B','D',1],['B','F',2],['C','E',2],['C','G',1]],board:[['A',Math.PI/2,3]]},
+    {name:'双燕衔环',rings:[['A',450,520,90],['B',310,405,82],['C',590,405,82],['D',230,620,76],['E',450,690,80],['F',670,620,76]],links:[['A','B',1],['A','C',1],['B','D',2],['B','E',1],['C','E',2],['C','F',1]],board:[['A',-Math.PI/2,3]]},
+    {name:'三星照水',rings:[['A',450,520,88],['B',300,390,78],['C',600,390,78],['D',190,570,72],['E',450,700,82],['F',710,570,72],['G',450,260,75]],links:[['A','B',1],['A','C',2],['A','G',1],['B','D',1],['B','E',2],['C','E',1],['C','F',2]],board:[['A',Math.PI/2,3]]},
+    {name:'流云锁',rings:[['A',450,540,84],['B',300,420,76],['C',600,420,76],['D',210,600,70],['E',450,710,78],['F',690,600,70],['G',345,270,70],['H',555,270,70]],links:[['A','B',1],['A','C',2],['B','D',1],['B','E',1],['B','G',2],['C','E',2],['C','F',1],['C','H',2]],board:[['A',Math.PI/2,3]]},
+    {name:'五星连珠',rings:[['A',450,515,82],['B',300,405,74],['C',600,405,74],['D',205,575,70],['E',450,690,78],['F',695,575,70],['G',330,255,68],['H',570,255,68],['I',450,835,68]],links:[['A','B',2],['A','C',1],['B','D',1],['B','E',2],['B','G',1],['C','E',1],['C','F',2],['C','H',1],['E','I',2]],board:[['A',-Math.PI/2,3]]},
+    {name:'回纹玉扣',rings:[['A',450,510,82],['B',300,365,72],['C',600,365,72],['D',205,535,68],['E',450,665,76],['F',695,535,68],['G',300,775,68],['H',600,775,68],['I',450,235,66],['J',450,875,62]],links:[['A','B',1],['A','C',2],['A','I',1],['B','D',2],['B','E',1],['C','E',2],['C','F',1],['D','G',1],['E','G',2],['E','H',1],['F','H',2],['E','J',1]],board:[['A',Math.PI/2,3]]},
+    {name:'七曜同辉',rings:[['A',450,520,80],['B',310,400,70],['C',590,400,70],['D',220,560,66],['E',450,670,74],['F',680,560,66],['G',310,760,66],['H',590,760,66],['I',345,245,64],['J',555,245,64],['K',450,880,60]],links:[['A','B',1],['A','C',2],['B','D',1],['B','E',2],['B','I',1],['C','E',1],['C','F',2],['C','J',1],['D','G',2],['E','G',1],['E','H',2],['F','H',1],['E','K',2]],board:[['A',-Math.PI/2,3]]},
+    {name:'八方玲珑',rings:[['A',450,510,78],['B',310,390,68],['C',590,390,68],['D',210,545,64],['E',450,655,72],['F',690,545,64],['G',290,760,64],['H',610,760,64],['I',300,235,60],['J',600,235,60],['K',180,720,58],['L',720,720,58]],links:[['A','B',2],['A','C',1],['B','D',1],['B','E',2],['B','I',1],['C','E',1],['C','F',2],['C','J',1],['D','G',2],['D','K',1],['E','G',1],['E','H',2],['F','H',1],['F','L',2]],board:[['A',Math.PI/2,3]]},
+    {name:'九曲盘长',rings:[['A',450,500,76],['B',320,390,66],['C',580,390,66],['D',225,535,62],['E',450,640,70],['F',675,535,62],['G',300,745,62],['H',600,745,62],['I',350,245,58],['J',550,245,58],['K',180,690,56],['L',720,690,56],['M',450,860,58]],links:[['A','B',1],['A','C',2],['B','D',2],['B','E',1],['B','I',1],['C','E',2],['C','F',1],['C','J',2],['D','G',1],['D','K',2],['E','G',2],['E','H',1],['E','M',2],['F','H',2],['F','L',1]],board:[['A',-Math.PI/2,3]]},
+    {name:'十全玉阵',rings:[['A',450,495,74],['B',325,380,64],['C',575,380,64],['D',235,520,60],['E',450,620,68],['F',665,520,60],['G',300,720,60],['H',600,720,60],['I',350,235,56],['J',550,235,56],['K',175,655,54],['L',725,655,54],['M',390,850,54],['N',510,850,54]],links:[['A','B',1],['A','C',2],['B','D',1],['B','E',2],['B','I',1],['C','E',1],['C','F',2],['C','J',1],['D','G',2],['D','K',1],['E','G',1],['E','H',2],['E','M',1],['E','N',2],['F','H',1],['F','L',2]],board:[['A',Math.PI/2,3]]},
+    {name:'万象归环',rings:[['A',450,480,72],['B',330,370,62],['C',570,370,62],['D',240,505,58],['E',450,600,66],['F',660,505,58],['G',300,700,58],['H',600,700,58],['I',350,225,54],['J',550,225,54],['K',175,635,52],['L',725,635,52],['M',380,820,52],['N',520,820,52],['O',450,900,48]],links:[['A','B',2],['A','C',1],['B','D',1],['B','E',2],['B','I',1],['C','E',1],['C','F',2],['C','J',1],['D','G',2],['D','K',1],['E','G',1],['E','H',2],['E','M',1],['E','N',2],['F','H',1],['F','L',2],['M','O',1],['N','O',2]],board:[['A',-Math.PI/2,3]]}
+  ];
+
+  function seedRand(seed){let t=seed>>>0;return()=>{t+=0x6D2B79F5;let r=Math.imul(t^t>>>15,1|t);r^=r+Math.imul(r^r>>>7,61|r);return((r^r>>>14)>>>0)/4294967296}}
+  function buildLevel(chapterIndex,levelIndex){
+    const tpl=TEMPLATES[levelIndex%11]; const rand=seedRand((chapterIndex+1)*1000+levelIndex*37+17);
+    const rings=tpl.rings.map(([id,x,y,r],i)=>({id,x,y,r,rotation:(rand()*Math.PI*2),seed:Math.floor(rand()*99999),z:i}));
+    const links=tpl.links.map(([host,target,gems],i)=>({id:`L${i}`,host,target,gems,released:false}));
+    tpl.board.forEach(([target,angle,gems],i)=>links.push({id:`B${i}`,host:'board',target,angle,gems,released:false}));
+    return {id:chapterIndex*11+levelIndex+1,name:tpl.name,chapterIndex,levelIndex,rings,links};
   }
-];
+  window.YH_DATA={THEMES,TEMPLATES,buildLevel};
+})();
