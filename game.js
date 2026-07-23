@@ -5,12 +5,13 @@ const restartBtn=document.getElementById('restart');
 const nextBtn=document.getElementById('next');
 const soundBtn=document.getElementById('sound');
 const musicBtn=document.getElementById('music');
+const bgm=document.getElementById('bgm');
 const levelName=document.getElementById('levelName');
 const hint=document.getElementById('hint');
 
 let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
 let levelIndex=0,rings=[],clasps=[],particles=[];
-let selected=null,lastAngle=0,soundOn=true,musicOn=false,audioCtx=null,musicTimer=null,musicStep=0;
+let selected=null,lastAngle=0,soundOn=true,musicOn=false,audioCtx=null;
 
 const THEMES={
   pink:{bg:['#fff8fb','#f4dfe8','#e7c3d2'],ring:['#fff5f8','#f2a8c1','#c75f89'],accent:'#b95e82',particle:'rgba(225,122,160,.55)'},
@@ -59,7 +60,7 @@ addEventListener('resize',resize);
 
 function loadLevel(i){
  levelIndex=i%LEVELS.length;const L=LEVELS[levelIndex],t=THEMES[L.theme];
- levelName.textContent=L.name;stage.style.background=`radial-gradient(circle at 50% 35%,${t.bg[0]},${t.bg[1]} 58%,${t.bg[2]})`;
+ levelName.textContent=L.name;stage.style.background='linear-gradient(180deg,#173330,#21433f 58%,#102826)';
  rings=L.rings.map(r=>({...r,angle:r.a,velocity:0,fall:0,alpha:1,removed:false}));
  clasps=L.clasps.map((c,n)=>({id:n,a:c[0],b:c[1],open:false,flash:0}));
  selected=null;nextBtn.classList.add('hidden');hint.textContent='旋转玉镯，让缺口经过金扣即可脱开';
@@ -149,30 +150,22 @@ function playUnlock(){
  chime(2349.32,.075,.012,.30);
 }
 function playDrop(){chime(783.99,0,.018,.28)}
-function musicNote(freq,start,dur,gain){
- const ac=audio(),osc=ac.createOscillator(),amp=ac.createGain();
- osc.type='sine';osc.frequency.setValueAtTime(freq,start);
- amp.gain.setValueAtTime(0.0001,start);
- amp.gain.linearRampToValueAtTime(gain,start+.18);
- amp.gain.exponentialRampToValueAtTime(0.0001,start+dur);
- osc.connect(amp);amp.connect(ac.destination);osc.start(start);osc.stop(start+dur+.05);
-}
-const MUSIC_SCALE=[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25];
-function musicTick(){
- if(!musicOn)return;
- const ac=audio(),now=ac.currentTime;
- const melody=MUSIC_SCALE[musicStep%MUSIC_SCALE.length];
- musicNote(melody,now,.95,.008);
- musicNote(melody/2,now,.95,.0045);
- musicStep=(musicStep+[1,2,1,3,2][musicStep%5])%MUSIC_SCALE.length;
-}
-function startMusic(){
- if(musicTimer)return;
- musicOn=true;musicBtn.textContent='音乐：开';musicTick();musicTimer=setInterval(musicTick,900);
+async function startMusic(){
+ try{
+  bgm.volume=.42;
+  await bgm.play();
+  musicOn=true;
+  musicBtn.textContent='音乐：开';
+ }catch(err){
+  musicOn=false;
+  musicBtn.textContent='音乐：缺文件';
+  hint.textContent='请把音乐文件放进 assets，并命名为 hetang-yuese.mp3';
+ }
 }
 function stopMusic(){
- musicOn=false;musicBtn.textContent='音乐：关';
- if(musicTimer){clearInterval(musicTimer);musicTimer=null;}
+ bgm.pause();
+ musicOn=false;
+ musicBtn.textContent='音乐：关';
 }
 function spawnSpark(x,y,burst=false){
  const t=THEMES[LEVELS[levelIndex].theme];
@@ -181,9 +174,67 @@ function spawnSpark(x,y,burst=false){
 }
 function drawBg(){
  const t=THEMES[LEVELS[levelIndex].theme];
- ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle=t.accent;ctx.lineWidth=1;
- for(let i=0;i<7;i++){const y=H*(.14+i*.12);ctx.beginPath();ctx.moveTo(-20,y);ctx.bezierCurveTo(W*.3,y-15,W*.7,y+15,W+20,y);ctx.stroke()}
+ const time=performance.now()/1000;
+
+ // 深色宣纸与月晕
+ const g=ctx.createRadialGradient(W*.76,H*.13,4,W*.76,H*.13,W*.32);
+ g.addColorStop(0,'rgba(250,226,166,.23)');
+ g.addColorStop(.24,'rgba(218,198,148,.08)');
+ g.addColorStop(1,'rgba(0,0,0,0)');
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+ // 月亮
+ ctx.save();
+ ctx.globalAlpha=.80;
+ ctx.fillStyle='#ead9a8';
+ ctx.shadowColor='rgba(244,222,164,.34)';
+ ctx.shadowBlur=28;
+ ctx.beginPath();ctx.arc(W*.78,H*.13,Math.min(W,H)*.055,0,Math.PI*2);ctx.fill();
  ctx.restore();
+
+ // 远山
+ ctx.save();ctx.globalAlpha=.32;ctx.fillStyle='#0a1c1c';
+ ctx.beginPath();ctx.moveTo(0,H*.29);
+ ctx.bezierCurveTo(W*.16,H*.20,W*.27,H*.31,W*.40,H*.23);
+ ctx.bezierCurveTo(W*.58,H*.14,W*.69,H*.31,W*.84,H*.22);
+ ctx.bezierCurveTo(W*.93,H*.18,W,H*.25,W,H*.25);
+ ctx.lineTo(W,H*.42);ctx.lineTo(0,H*.42);ctx.closePath();ctx.fill();
+ ctx.restore();
+
+ // 水波
+ ctx.save();ctx.strokeStyle='rgba(191,218,199,.12)';ctx.lineWidth=1;
+ for(let i=0;i<9;i++){
+  const y=H*(.25+i*.085);
+  ctx.beginPath();ctx.moveTo(-20,y);
+  ctx.bezierCurveTo(W*.28,y-8+Math.sin(time+i)*2,W*.68,y+8,W+20,y);
+  ctx.stroke();
+ }
+ ctx.restore();
+
+ // 荷叶剪影
+ ctx.save();ctx.globalAlpha=.34;ctx.fillStyle='#0b2622';
+ const leaves=[[.12,.84,.13],[.82,.79,.16],[.70,.91,.11],[.28,.94,.15]];
+ for(const [x,y,r] of leaves){
+  ctx.beginPath();ctx.ellipse(W*x,H*y,W*r,H*r*.36,-.12,0,Math.PI*2);ctx.fill();
+ }
+ ctx.strokeStyle='rgba(187,208,174,.18)';ctx.lineWidth=2;
+ for(const [x,y] of leaves){ctx.beginPath();ctx.moveTo(W*x,H*y);ctx.lineTo(W*(x-.04),H);ctx.stroke()}
+ ctx.restore();
+
+ // 荷花
+ ctx.save();ctx.translate(W*.83,H*.72);ctx.globalAlpha=.42;ctx.fillStyle='#d8b3b2';
+ for(let i=0;i<8;i++){
+  ctx.save();ctx.rotate(i*Math.PI/4);
+  ctx.beginPath();ctx.ellipse(0,-18,8,22,0,0,Math.PI*2);ctx.fill();ctx.restore();
+ }
+ ctx.fillStyle='#d5bc72';ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();
+
+ // 流动薄雾
+ const fog=ctx.createLinearGradient(0,H*.46,W,H*.58);
+ fog.addColorStop(0,'rgba(222,234,220,0)');
+ fog.addColorStop(.5,'rgba(222,234,220,.07)');
+ fog.addColorStop(1,'rgba(222,234,220,0)');
+ ctx.save();ctx.translate(Math.sin(time*.22)*22,0);ctx.fillStyle=fog;ctx.fillRect(-30,H*.42,W+60,H*.22);ctx.restore();
 }
 function tubeGradient(r,rr){
  const t=THEMES[LEVELS[levelIndex].theme];
@@ -216,33 +267,67 @@ function claspGeometry(c){
 }
 function goldGradient(size){
  const g=ctx.createLinearGradient(-size/2,0,size/2,0);
- g.addColorStop(0,'#6e3c0d');g.addColorStop(.18,'#b76a1f');
- g.addColorStop(.46,'#ffe59e');g.addColorStop(.68,'#d4892c');g.addColorStop(1,'#6b390b');
+ g.addColorStop(0,'#6f420f');
+ g.addColorStop(.18,'#b97925');
+ g.addColorStop(.44,'#ffe6a0');
+ g.addColorStop(.62,'#d49838');
+ g.addColorStop(1,'#71420e');
  return g;
 }
-function drawCuffHalf(x,y,tube,angle,front){
- const cuffRadius=tube*.53;
- ctx.save();ctx.translate(x,y);ctx.rotate(angle);
- ctx.lineCap='round';ctx.lineWidth=Math.max(5,tube*.34);ctx.strokeStyle=goldGradient(tube*1.5);
- if(front){ctx.shadowColor='rgba(70,37,8,.28)';ctx.shadowBlur=5;ctx.shadowOffsetY=2;}
+function roundedRectPath(x,y,w,h,r){
+ const rr=Math.min(r,w/2,h/2);
  ctx.beginPath();
- if(front) ctx.arc(0,0,cuffRadius,-Math.PI/2,Math.PI/2);
- else ctx.arc(0,0,cuffRadius,Math.PI/2,Math.PI*1.5);
- ctx.stroke();
- if(front){
-  ctx.shadowColor='transparent';ctx.strokeStyle='rgba(255,241,184,.84)';ctx.lineWidth=Math.max(1,tube*.055);
-  ctx.beginPath();ctx.arc(-1,0,cuffRadius,-Math.PI/2+.15,Math.PI/2-.15);ctx.stroke();
+ ctx.moveTo(x+rr,y);
+ ctx.arcTo(x+w,y,x+w,y+h,rr);
+ ctx.arcTo(x+w,y+h,x,y+h,rr);
+ ctx.arcTo(x,y+h,x,y,rr);
+ ctx.arcTo(x,y,x+w,y,rr);
+ ctx.closePath();
+}
+function drawCuffHalf(x,y,tube,radialAngle,front){
+ // 金扣是一段紧贴玉管的短金套，不再画成独立圆环。
+ const tangential=radialAngle+Math.PI/2;
+ const w=tube*.86,h=tube*1.22;
+
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(tangential);
+
+ if(!front){
+  ctx.globalAlpha=.92;
+  ctx.fillStyle='#6b3c0d';
+  ctx.shadowColor='rgba(0,0,0,.32)';
+  ctx.shadowBlur=5;ctx.shadowOffsetY=3;
+  roundedRectPath(-w/2,-h/2,w,h,h*.26);
+  ctx.fill();
+ }else{
+  ctx.fillStyle=goldGradient(w);
+  ctx.shadowColor='rgba(0,0,0,.25)';
+  ctx.shadowBlur=4;ctx.shadowOffsetY=2;
+  // 前层只覆盖玉管中间区域，制造“金套包裹玉石”而不是圆圈悬浮。
+  roundedRectPath(-w/2,-h*.34,w,h*.68,h*.22);
+  ctx.fill();
+
+  ctx.shadowColor='transparent';
+  ctx.fillStyle='rgba(255,244,191,.76)';
+  roundedRectPath(-w*.28,-h*.28,w*.12,h*.56,h*.08);
+  ctx.fill();
+
+  ctx.strokeStyle='rgba(103,57,10,.48)';
+  ctx.lineWidth=1;
+  roundedRectPath(-w/2,-h*.34,w,h*.68,h*.22);
+  ctx.stroke();
  }
  ctx.restore();
 }
 function drawClaspLayer(front){
  for(const c of clasps){
   if(c.open)continue;
-  const A=ring(c.a),B=ring(c.b);if(!A||!B||A.removed||B.removed)continue;
+  const A=ring(c.a),B=ring(c.b);
+  if(!A||!B||A.removed||B.removed)continue;
   const a=direction(A,B),ra=radius(A),rb=radius(B),ta=ra*.29,tb=rb*.29;
   const ax=A.x*W+Math.cos(a)*ra, ay=A.y*H+A.fall+Math.sin(a)*ra;
   const bx=B.x*W-Math.cos(a)*rb, by=B.y*H+B.fall-Math.sin(a)*rb;
-  // Each cuff is centred exactly on the jade tube. Drawing back half before jade and front half after jade creates a real wrap.
   drawCuffHalf(ax,ay,ta,a,front);
   drawCuffHalf(bx,by,tb,a+Math.PI,front);
  }
