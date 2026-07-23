@@ -1,8 +1,5 @@
 
-:root{
-  --ink:#496254;
-  --soft:#eef7f2;
-}
+:root{--ink:#496254}
 *{box-sizing:border-box}
 html,body{
   margin:0;min-height:100%;overflow:hidden;
@@ -14,50 +11,35 @@ html,body{
   min-height:100vh;display:flex;flex-direction:column;
   padding:max(14px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom))
 }
-.topbar{
-  display:grid;grid-template-columns:76px 1fr 76px;align-items:center;
-  min-height:74px
-}
+.topbar{display:grid;grid-template-columns:76px 1fr 76px;align-items:center;min-height:74px}
 .titleWrap{text-align:center}
 .title{font-size:34px;letter-spacing:.22em;margin-right:-.22em}
 .subtitle{font-size:12px;opacity:.62;letter-spacing:.16em;margin-top:4px}
 .level{text-align:right;font-size:14px}
 button{font-family:inherit;border:0}
-.ghost,.primary{
-  border-radius:999px;padding:11px 16px;cursor:pointer
-}
-.ghost{
-  background:rgba(255,255,255,.66);color:var(--ink);
-  box-shadow:0 6px 18px rgba(68,94,77,.12)
-}
+.ghost,.primary{border-radius:999px;padding:11px 16px;cursor:pointer}
+.ghost{background:rgba(255,255,255,.68);color:var(--ink);box-shadow:0 6px 18px rgba(68,94,77,.12)}
 .stageWrap{
-  position:relative;flex:1;min-height:0;
-  width:min(94vw,760px);margin:4px auto 10px;
+  position:relative;flex:1;min-height:0;width:min(94vw,760px);margin:4px auto 10px;
   border-radius:34px;overflow:hidden;
-  background:
-    radial-gradient(circle at 50% 38%,rgba(255,255,255,.96),rgba(244,250,246,.88) 52%,rgba(221,236,226,.94));
-  box-shadow:0 24px 60px rgba(67,92,76,.18),inset 0 0 0 1px rgba(255,255,255,.75)
+  box-shadow:0 24px 60px rgba(67,92,76,.18),inset 0 0 0 1px rgba(255,255,255,.78);
+  transition:background .5s ease
 }
-.stageWrap:before{
-  content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
-  background:
-    radial-gradient(circle at 20% 20%,#fff 0 1px,transparent 1.2px),
-    radial-gradient(circle at 70% 60%,#fff 0 1px,transparent 1.2px);
-  background-size:30px 30px,42px 42px
-}
+.theme-spring{background:radial-gradient(circle at 50% 35%,#fff,#f7fbf8 50%,#deeee4)}
+.theme-amethyst{background:radial-gradient(circle at 50% 35%,#fff,#faf5ff 50%,#e8dff2)}
+.theme-imperial{background:radial-gradient(circle at 50% 35%,#fff,#f1fbf3 50%,#d9ebdd)}
+.theme-ice{background:radial-gradient(circle at 50% 35%,#fff,#f2fbff 50%,#dceef3)}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .message{
   position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
-  padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.78);
-  font-size:13px;white-space:nowrap;
-  box-shadow:0 8px 22px rgba(77,103,87,.12);
+  padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.8);
+  font-size:13px;white-space:nowrap;box-shadow:0 8px 22px rgba(77,103,87,.12);
   backdrop-filter:blur(12px)
 }
 .bottom{text-align:center;min-height:78px}
 .primary{
   color:white;background:linear-gradient(180deg,#5f866e,#486c57);
-  padding:13px 34px;font-size:16px;
-  box-shadow:0 9px 22px rgba(67,103,80,.26)
+  padding:13px 34px;font-size:16px;box-shadow:0 9px 22px rgba(67,103,80,.26)
 }
 .hint{font-size:13px;opacity:.68;margin-top:10px}
 .hidden{display:none}
